@@ -88,6 +88,9 @@ function extractTarGz(tarPath, destDir) {
     } else {
       fs.mkdirSync(path.dirname(fullPath), { recursive: true });
       fs.writeFileSync(fullPath, entry.data);
+      if (entry.mode) {
+        fs.chmod(fullPath, entry.mode & 0o777);
+      }
     }
   }
 }
