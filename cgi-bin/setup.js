@@ -92,7 +92,7 @@ function downloadAsset(asset, destPath, callback) {
 
 function extractTarGz(tarPath, destDir) {
   const zlib = require('zlib');
-  const compressed = fs.readFileSync(tarPath, { encoding: null });
+  const compressed = fs.readFileSync(tarPath, { encoding: 'buffer' });
   const decompressed = zlib.gunzipSync(compressed);
   const entries = tar.untarSync(decompressed);
 
