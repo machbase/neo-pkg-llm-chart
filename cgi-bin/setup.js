@@ -29,7 +29,7 @@ function detectPlatform() {
 
 function getLatestRelease(callback) {
   const url = `https://api.github.com/repos/${REPO}/releases/latest`;
-  http.get(url, { headers: { 'User-Agent': 'neo-pkg-llm-chart' } }, (res) => {
+  http.get(url, { headers: { 'User-Agent': 'neo-pkg-llm-chat' } }, (res) => {
     if (!res.ok) {
       callback(new Error('HTTP ' + res.statusCode + ': ' + res.text()));
       return;
@@ -55,7 +55,7 @@ function findAsset(release, platform) {
 
 function downloadAsset(asset, destPath, callback) {
   const MAX_REDIRECTS = 5;
-  const headers = { 'User-Agent': 'neo-pkg-llm-chart' };
+  const headers = { 'User-Agent': 'neo-pkg-llm-chat' };
 
   function fetch(url, remaining) {
     http.get(url, { headers }, (res) => {

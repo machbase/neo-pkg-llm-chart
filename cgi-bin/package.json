@@ -1,5 +1,5 @@
 {
-  "name": "neo-pkg-llm-chart",
+  "name": "neo-pkg-llm-chat",
   "version": "0.0.1",
   "bin": {},
   "scripts": {
