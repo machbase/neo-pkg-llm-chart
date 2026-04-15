@@ -54,16 +54,40 @@ function findAsset(release, platform) {
 }
 
 function downloadAsset(asset, destPath, callback) {
-  const url = asset.browser_download_url;
-  http.get(url, { headers: { 'User-Agent': 'neo-pkg-llm-chart' } }, (res) => {
-    const buffer = res.readBodyBuffer();
-    if (!buffer || buffer.byteLength === 0) {
-      callback(new Error('empty download'));
-      return;
-    }
-    fs.writeFileSync(destPath, buffer);
-    callback(null);
-  });
+  const MAX_REDIRECTS = 5;
+  const headers = { 'User-Agent': 'neo-pkg-llm-chart' };
+
+  function fetch(url, remaining) {
+    http.get(url, { headers }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400) {
+        const location = res.headers && res.headers.location;
+        if (!location) {
+          callback(new Error('redirect ' + res.statusCode + ' without location'));
+          return;
+        }
+        if (remaining <= 0) {
+          callback(new Error('too many redirects'));
+          return;
+        }
+        console.println('redirect →', location);
+        fetch(location, remaining - 1);
+        return;
+      }
+      if (!res.ok) {
+        callback(new Error('HTTP ' + res.statusCode));
+        return;
+      }
+      const buffer = res.readBodyBuffer();
+      if (!buffer || buffer.byteLength === 0) {
+        callback(new Error('empty download'));
+        return;
+      }
+      fs.writeFileSync(destPath, buffer);
+      callback(null);
+    });
+  }
+
+  fetch(asset.browser_download_url, MAX_REDIRECTS);
 }
 
 function extractTarGz(tarPath, destDir) {
