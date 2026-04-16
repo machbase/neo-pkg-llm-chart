@@ -2505,6 +2505,50 @@ details.card > :not(summary) {
     line-height: 1.5;
 }
 
+/* ─── Tool call dropdown ─── */
+.chat-tool-bubble {
+    padding: 0 !important;
+    overflow: hidden;
+    max-width: 85%;
+}
+
+.chat-tool-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-4);
+    width: 100%;
+    padding: var(--spacing-8) var(--spacing-12);
+    background: none;
+    border: none;
+    color: var(--color-on-surface);
+    font-size: var(--font-size-base);
+    line-height: 1.5;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.chat-tool-toggle:hover {
+    background: var(--color-surface-hover);
+}
+
+.chat-tool-name {
+    font-weight: 500;
+    flex: 1;
+    text-align: left;
+}
+
+.chat-tool-detail {
+    padding: var(--spacing-8) var(--spacing-12) var(--spacing-8);
+    border-top: 1px solid var(--color-border);
+    font-size: var(--font-size-sm);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.chat-tool-detail .chat-markdown {
+    font-size: var(--font-size-sm);
+}
+
 /* ─── Loading dots ─── */
 .chat-loading {
     display: flex;

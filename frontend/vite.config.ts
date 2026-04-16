@@ -26,12 +26,7 @@ export default defineConfig({
         host: true,
         port: 7779,
         proxy: {
-            "/sys/ws": {
-                target: `ws://${"192.168.1.76"}:8884`,
-                changeOrigin: true,
-                secure: false,
-                ws: true,
-            },
+
         },
     },
 });

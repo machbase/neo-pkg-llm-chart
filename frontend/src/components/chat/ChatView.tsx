@@ -22,6 +22,7 @@ interface ChatViewProps {
     setSelectedModel: (model: PkgSelectedModel) => void;
     handleSendMessage: () => void;
     handleInterruptMessage: () => void;
+    handleClearSession: () => void;
     onOpenSettings?: () => void;
 }
 
@@ -38,10 +39,11 @@ export const ChatView = ({
     isProcessingAnswer,
     getListModels,
     setInputValue,
-    setMessages,
+    setMessages: _setMessages,
     setSelectedModel,
     handleSendMessage,
     handleInterruptMessage,
+    handleClearSession,
     onOpenSettings,
 }: ChatViewProps) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -164,7 +166,7 @@ export const ChatView = ({
         if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
     }, []);
 
-    const handleClearMessages = () => setMessages([]);
+    const handleClearMessages = () => handleClearSession();
 
     const handleModelMenuOpen = () => {
         if (modelBtnRef.current) {
@@ -218,7 +220,7 @@ export const ChatView = ({
                 {/* Clear button (top-right) */}
                 {messages.length > 0 && (
                     <div className="chat-floating-top">
-                        <button className="chat-scroll-btn" onClick={handleClearMessages} title="Clear chat">
+                        <button className="chat-scroll-btn" onClick={handleClearMessages} title="Clear session">
                             <Icon name="delete_sweep" className="icon-sm" />
                         </button>
                     </div>
