@@ -5,6 +5,33 @@ import { ChatMessageList } from './ChatMessageList';
 import Icon from '../common/Icon';
 import neoLogo from '../../assets/image/neow_favicon.webp';
 
+interface SuggestionChip {
+    icon: string;
+    label: string;
+    prompt?: string;
+    children?: SuggestionChip[];
+}
+
+const SUGGESTION_CHIPS: SuggestionChip[] = [
+    { icon: 'table_chart', label: '어떤 테이블이 있어?', prompt: '테이블 리스트 조회 해줘' },
+    { icon: 'sell', label: '태그 목록 보여줘', prompt: 'Example 테이블의 태그 리스트 조회해줘' },
+    { icon: 'menu_book', label: 'Rollup이 뭐야?', prompt: 'Rollup 이 뭐야?' },
+    {
+        icon: 'dashboard', label: '분석 대시보드 만들어줘', children: [
+            { icon: 'monitoring', label: '분석 대시보드', prompt: 'Example 테이블 데이터의 분석 대시보드 만들어줘' },
+            { icon: 'analytics', label: '심층 분석 대시보드', prompt: 'Example 테이블 데이터의 심층 분석 대시보드 만들어줘' },
+        ],
+    },
+    {
+        icon: 'query_stats', label: '분석 리포트 작성해줘', children: [
+            { icon: 'summarize', label: '분석 리포트', prompt: 'Example 테이블 데이터 분석 리포트 작성해줘' },
+            { icon: 'account_balance', label: '금융 분석 리포트', prompt: 'Example 테이블 데이터 금융 분석 리포트 작성해줘' },
+            { icon: 'vibration', label: '진동 분석 리포트', prompt: 'Example 테이블 데이터 진동 분석 리포트 작성해줘' },
+            { icon: 'directions_car', label: '운행 분석 리포트', prompt: 'Example 테이블 데이터 운행 분석 리포트 작성해줘' },
+        ],
+    },
+];
+
 interface ChatViewProps {
     messages: Message[];
     providerList: PkgProvider[];
@@ -58,6 +85,7 @@ export const ChatView = ({
     const [isModelLoading, setIsModelLoading] = useState(false);
     const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
     const [isReconnecting, setIsReconnecting] = useState(false);
+    const [chipChildren, setChipChildren] = useState<SuggestionChip[] | null>(null);
     const modelBtnRef = useRef<HTMLButtonElement>(null);
     const [dropdownPos, setDropdownPos] = useState<{ left: number; bottom: number } | null>(null);
 
@@ -362,6 +390,40 @@ export const ChatView = ({
                         </button>
                     )}
                 </div>
+
+                {/* Suggestion chips */}
+                {messages.length === 0 && isModelSelected && (
+                    <div className={`chat-suggestions ${chipChildren !== null ? 'chat-suggestions--sub' : ''}`}>
+                        {chipChildren !== null && (
+                            <button
+                                className="chat-suggestion-chip chat-suggestion-chip--back"
+                                onClick={() => setChipChildren(null)}
+                            >
+                                <Icon name="arrow_back" className="icon-sm" />
+                            </button>
+                        )}
+                        {(chipChildren ?? SUGGESTION_CHIPS).map((chip) => (
+                            <button
+                                key={chip.label}
+                                className="chat-suggestion-chip"
+                                onClick={() => {
+                                    if (chip.children) {
+                                        setChipChildren(chip.children);
+                                    } else if (chip.prompt) {
+                                        setInputValue(chip.prompt);
+                                    }
+                                }}
+                            >
+                                <Icon name={chip.icon} className="icon-sm" />
+                                <span>{chip.label}</span>
+                                {chip.children && <Icon name="chevron_right" className="icon-xs" />}
+                            </button>
+                        ))}
+                        {chipChildren !== null && (
+                            <div className="chat-suggestion-chip chat-suggestion-chip--spacer" />
+                        )}
+                    </div>
+                )}
 
                 {messages.length === 0 && <div className="chat-spacer chat-spacer--active" />}
             </div>

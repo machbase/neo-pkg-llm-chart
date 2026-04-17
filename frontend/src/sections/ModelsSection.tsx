@@ -8,6 +8,7 @@ interface Props {
     gemini: ProviderConfig
     ollama: OllamaConfig
     onChange: (provider: ModelProvider, models: ModelEntry[]) => void
+    errors?: string[]
 }
 
 const PROVIDER_META: Record<ModelProvider, { label: string; modelsUrl: string; hint: string }> = {
@@ -37,7 +38,7 @@ const ALL_PROVIDERS: ModelProvider[] = ['claude', 'chatgpt', 'gemini', 'ollama']
 
 type ModelRow = { provider: ModelProvider; index: number; entry: ModelEntry }
 
-export function ModelsSection({ claude, chatgpt, gemini, ollama, onChange }: Props) {
+export function ModelsSection({ claude, chatgpt, gemini, ollama, onChange, errors = [] }: Props) {
     const [selected, setSelected] = useState<ModelProvider>('claude')
 
     const providerModels = (p: ModelProvider): ModelEntry[] => {
@@ -83,11 +84,13 @@ export function ModelsSection({ claude, chatgpt, gemini, ollama, onChange }: Pro
                 </div>
             </div>
 
-            <div className="flex flex-col gap-1 mb-3 text-xs text-on-surface-tertiary">
+            <div className="flex flex-col gap-3 mb-3 text-xs text-on-surface-tertiary">
                 {ALL_PROVIDERS.map((p) => (
-                    <div key={p} className="flex items-center gap-2">
+                    <div key={p} className="flex items-center gap-3">
                         <span className={`badge badge-${p}`}>{PROVIDER_META[p].label}</span>
-                        <a href={PROVIDER_META[p].modelsUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Models</a>
+                        <a href={PROVIDER_META[p].modelsUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline" style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                            <Icon name="link" className="icon-xs" />Models
+                        </a>
                         <span>{PROVIDER_META[p].hint}</span>
                     </div>
                 ))}
@@ -103,6 +106,13 @@ export function ModelsSection({ claude, chatgpt, gemini, ollama, onChange }: Pro
                     </tr>
                 </thead>
                 <tbody>
+                    {rows.length === 0 && (
+                        <tr>
+                            <td colSpan={4} className="text-center text-on-surface-disabled" style={{ padding: '24px 0' }}>
+                                No models added. Add a model.
+                            </td>
+                        </tr>
+                    )}
                     {rows.map(({ provider, index, entry }) => (
                         <tr key={`${provider}-${index}`}>
                             <td><span className={`badge badge-${provider}`}>{PROVIDER_META[provider].label}</span></td>
@@ -112,6 +122,7 @@ export function ModelsSection({ claude, chatgpt, gemini, ollama, onChange }: Pro
                                     placeholder="Display name"
                                     value={entry.name}
                                     onChange={(e) => handleChange(provider, index, 'name', e.target.value)}
+                                    className={errors.includes(`model.${provider}.${index}.name`) ? 'input-error' : ''}
                                 />
                             </td>
                             <td>
@@ -120,6 +131,7 @@ export function ModelsSection({ claude, chatgpt, gemini, ollama, onChange }: Pro
                                     placeholder="model-id"
                                     value={entry.model_id}
                                     onChange={(e) => handleChange(provider, index, 'model_id', e.target.value)}
+                                    className={errors.includes(`model.${provider}.${index}.model_id`) ? 'input-error' : ''}
                                 />
                             </td>
                             <td>

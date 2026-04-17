@@ -20,6 +20,7 @@ export default function App() {
     const [config, setConfig] = useState<AppConfig>(defaultConfig());
     const [saving, setSaving] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
     const loadConfigList = useCallback(async () => {
         try {
@@ -87,6 +88,45 @@ export default function App() {
     }, [notify, loadConfigList, loadConfig, selectedConfig, setSelectedConfig]);
 
     const handleSave = useCallback(async () => {
+        const errors: string[] = [];
+        if (!config.machbase.host.trim()) errors.push("machbase.host");
+        if (!config.machbase.port.trim()) errors.push("machbase.port");
+        if (!config.machbase.user.trim()) errors.push("machbase.user");
+        if (!config.machbase.password.trim()) errors.push("machbase.password");
+        // Validate model entries: if added, name must not be empty
+        const providers: Array<{ key: string; models: { name: string; model_id: string }[] }> = [
+            { key: "claude", models: config.claude.models },
+            { key: "chatgpt", models: config.chatgpt.models },
+            { key: "gemini", models: config.gemini.models },
+            { key: "ollama", models: config.ollama.models },
+        ];
+        for (const p of providers) {
+            p.models.forEach((m, i) => {
+                if (!m.name.trim()) errors.push(`model.${p.key}.${i}.name`);
+                if (!m.model_id.trim()) errors.push(`model.${p.key}.${i}.model_id`);
+            });
+        }
+        // At least one provider must have API key + model (Ollama: model only)
+        const hasProvider =
+            (config.claude.api_key.trim() && config.claude.models.some((m) => m.name.trim())) ||
+            (config.chatgpt.api_key.trim() && config.chatgpt.models.some((m) => m.name.trim())) ||
+            (config.gemini.api_key.trim() && config.gemini.models.some((m) => m.name.trim())) ||
+            config.ollama.models.some((m) => m.name.trim());
+        if (!hasProvider) errors.push("no_provider");
+
+        if (errors.length > 0) {
+            setValidationErrors(errors);
+            const hasConnection = errors.some((e) => e.startsWith("machbase."));
+            const hasModel = errors.some((e) => e.startsWith("model."));
+            const hasNoProvider = errors.includes("no_provider");
+            const msgs: string[] = [];
+            if (hasConnection) msgs.push("Machbase connection fields");
+            if (hasModel) msgs.push("model display names");
+            if (hasNoProvider) msgs.push("at least one provider with API key and model");
+            notify(`Please fill in: ${msgs.join(", ")}.`, "error");
+            return;
+        }
+        setValidationErrors([]);
         setSaving(true);
         try {
             const isNew = selectedConfig === null;
@@ -109,6 +149,7 @@ export default function App() {
 
     const handleMachbaseChange = useCallback((machbase: AppConfig["machbase"]) => {
         setConfig((prev) => ({ ...prev, machbase }));
+        setValidationErrors([]);
     }, []);
 
     const handleApiKeyChange = useCallback((provider: "claude" | "chatgpt" | "gemini", key: string) => {
@@ -127,6 +168,7 @@ export default function App() {
             ...prev,
             [provider]: { ...prev[provider], models },
         }));
+        setValidationErrors([]);
     }, []);
 
     return (
@@ -163,7 +205,7 @@ export default function App() {
                         <div className="page-body">
                             <div className="page-body-inner">
                                 <div className="flex flex-col gap-4">
-                                    <MachbaseSection config={config.machbase} onChange={handleMachbaseChange} />
+                                    <MachbaseSection config={config.machbase} onChange={handleMachbaseChange} errors={validationErrors} />
                                     <ApiKeysSection
                                         claude={config.claude}
                                         chatgpt={config.chatgpt}
@@ -172,7 +214,7 @@ export default function App() {
                                         onKeyChange={handleApiKeyChange}
                                         onOllamaUrlChange={handleOllamaUrlChange}
                                     />
-                                    <ModelsSection claude={config.claude} chatgpt={config.chatgpt} gemini={config.gemini} ollama={config.ollama} onChange={handleModelsChange} />
+                                    <ModelsSection claude={config.claude} chatgpt={config.chatgpt} gemini={config.gemini} ollama={config.ollama} onChange={handleModelsChange} errors={validationErrors} />
                                 </div>
                             </div>
                         </div>

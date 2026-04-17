@@ -24,8 +24,8 @@ type DisplayItem = { kind: 'message'; message: Message }
 const isToolCall = (msg: Message) =>
     msg.role === 'assistant' && msg.type === 'block' && msg.content.includes('🛠️');
 
-const isAssistantBlock = (msg: Message) =>
-    msg.role === 'assistant' && msg.type === 'block' && !msg.content.includes('🛠️');
+const isToolResult = (msg: Message) =>
+    msg.role === 'assistant' && msg.type === 'block' && !msg.content.includes('🛠️') && msg.content.trimStart().startsWith('```');
 
 /** Extract tool name from "🛠️ Calling tool: **tool_name**" */
 const extractToolName = (content: string): string => {
@@ -73,7 +73,7 @@ function buildDisplayItems(messages: Message[]): DisplayItem[] {
         // Tool call → pair with next result block
         if (isToolCall(msg)) {
             const toolGrp: ToolGroup = { callMessage: msg };
-            if (i + 1 < messages.length && isAssistantBlock(messages[i + 1])) {
+            if (i + 1 < messages.length && isToolResult(messages[i + 1])) {
                 toolGrp.resultMessage = messages[i + 1];
                 i += 2;
             } else {

@@ -849,7 +849,6 @@ details.card > :not(summary) {
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    max-width: 960px;
 }
 
 /*
@@ -867,8 +866,7 @@ details.card > :not(summary) {
     display: flex;
     flex-direction: column;
     min-height: 100%;
-    max-width: 960px;
-    margin: 0;
+    width: 100%;
 }
 
 /*
@@ -1133,6 +1131,13 @@ details.card > :not(summary) {
     padding: var(--spacing-8) var(--spacing-12);
     border-top: 1px solid var(--color-border);
     background-color: var(--color-surface-alt);
+}
+
+/* ─── Input validation error ─── */
+.input-error,
+.input-error:focus {
+    border-color: var(--color-error) !important;
+    box-shadow: 0 0 0 1px var(--color-error);
 }
 
 /* ─── FORM FIELD ─── */
@@ -1839,6 +1844,15 @@ details.card > :not(summary) {
 }
 
 /* Provider badges */
+.badge-claude,
+.badge-chatgpt,
+.badge-gemini,
+.badge-ollama {
+    min-width: 72px;
+    justify-content: center;
+    text-align: center;
+}
+
 .badge-claude {
     border-color: rgba(232, 121, 58, 0.3);
     background-color: rgba(232, 121, 58, 0.15);
@@ -1919,7 +1933,7 @@ details.card > :not(summary) {
 }
 
 .chat-welcome-title {
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-xl);
     font-weight: var(--font-weight-medium);
     color: var(--color-on-surface);
     margin: 0;
@@ -1929,6 +1943,55 @@ details.card > :not(summary) {
     font-size: var(--font-size-base);
     color: var(--color-on-surface-disabled);
     animation: chatFadeUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
+}
+
+.chat-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--spacing-12);
+    width: 100%;
+    max-width: 560px;
+    padding-right: 40px;
+    position: relative;
+    animation: chatFadeUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.15s both;
+}
+
+.chat-suggestion-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-6);
+    padding: var(--spacing-8) var(--spacing-16);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-round);
+    background: var(--color-surface);
+    color: var(--color-on-surface-variant);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.chat-suggestion-chip:hover {
+    background: var(--color-surface-hover);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.chat-suggestions--sub {
+    flex-wrap: nowrap;
+    padding-right: 0;
+}
+
+.chat-suggestion-chip--back {
+    padding: var(--spacing-8) var(--spacing-12);
+}
+
+.chat-suggestion-chip--spacer {
+    visibility: hidden;
+    padding: var(--spacing-8) var(--spacing-12);
+    border-color: transparent;
 }
 
 @keyframes chatFadeUp {
