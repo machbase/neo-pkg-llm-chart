@@ -11,6 +11,23 @@ const ROOT = path.resolve(path.dirname(process.argv[1]));
 const LLM_DIR = path.join(ROOT, 'llm');
 const REPO = 'machbase/neo-pkg-llm';
 
+const logs = [];
+function log() {
+  const parts = [];
+  for (let i = 0; i < arguments.length; i++) {
+    const a = arguments[i];
+    parts.push(typeof a === 'string' ? a : JSON.stringify(a));
+  }
+  logs.push(parts.join(' '));
+}
+
+function reply(data) {
+  const body = JSON.stringify(data);
+  process.stdout.write('Content-Type: application/json\r\n');
+  process.stdout.write('\r\n');
+  process.stdout.write(body);
+}
+
 function detectPlatform() {
   const platform = os.platform();
   const arch = os.arch();
@@ -99,24 +116,25 @@ const assetName = `neo-pkg-llm-${platform}.tar.gz`;
 // GitHub /releases/latest/download/ 는 최신 릴리스 asset으로 자동 리다이렉트 (API rate limit 없음)
 const url = `https://github.com/${REPO}/releases/latest/download/${assetName}`;
 
-console.println('platform:', platform);
-console.println('downloading:', url);
+log('platform:', platform);
+log('downloading:', url);
 
 const tmpFile = path.join(ROOT, '.llm-download.tar.gz');
 download(url, tmpFile, (err) => {
   if (err) {
-    console.println('ERROR:', err.message);
-    process.exit(1);
+    reply({ ok: false, reason: err.message || String(err), log: logs });
+    return;
   }
 
-  console.println('extracting to:', LLM_DIR);
+  log('extracting to:', LLM_DIR);
   try {
     extractTarGz(tmpFile, LLM_DIR);
     fs.unlinkSync(tmpFile);
   } catch (exErr) {
-    console.println('ERROR:', exErr.message);
-    process.exit(1);
+    reply({ ok: false, reason: exErr.message || String(exErr), log: logs });
+    return;
   }
 
-  console.println('done. llm installed at', LLM_DIR);
+  log('done. llm installed at', LLM_DIR);
+  reply({ ok: true, data: { path: LLM_DIR, log: logs } });
 });

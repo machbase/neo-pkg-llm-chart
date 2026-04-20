@@ -6,13 +6,61 @@ Machbase Neo용 LLM 서비스 패키지.
 ## 설치
 
 ```bash
+# 1) 패키지 복사
 pkg copy github.com/machbase/neo-pkg-llm-chat public/neo-pkg-llm-chat
-pkg run -C public/neo-pkg-llm-chat/cgi-bin setup
+
+# 2) 바이너리 다운로드 (CGI)
+curl -X POST http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/setup.js
+
+# 3) 설치 확인
+curl http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/setup-check.js
 ```
 
 ## CGI API
 
 모든 API는 JSON 응답을 반환합니다.
+
+### POST /public/neo-pkg-llm-chat/cgi-bin/setup.js
+
+`neo-pkg-llm` 바이너리를 GitHub 최신 릴리스에서 다운로드하고 `llm/` 디렉토리에 압축 해제합니다. (GitHub API 미사용, rate limit 없음)
+
+```bash
+curl -X POST http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/setup.js
+```
+
+```json
+{
+  "ok": true,
+  "data": {
+    "path": "/work/public/neo-pkg-llm-chat/cgi-bin/llm",
+    "log": [
+      "platform: linux-amd64",
+      "downloading: https://github.com/machbase/neo-pkg-llm/releases/latest/download/neo-pkg-llm-linux-amd64.tar.gz",
+      "extracting to: /work/public/neo-pkg-llm-chat/cgi-bin/llm",
+      "done. llm installed at /work/public/neo-pkg-llm-chat/cgi-bin/llm"
+    ]
+  }
+}
+```
+
+### GET /public/neo-pkg-llm-chat/cgi-bin/setup-check.js
+
+`setup.js`가 정상적으로 실행되어 바이너리가 설치되었는지 확인합니다.
+
+```bash
+curl http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/setup-check.js
+```
+
+```json
+{
+  "ok": true,
+  "data": {
+    "installed": true,
+    "binary": "/work/public/neo-pkg-llm-chat/cgi-bin/llm/neo-pkg-llm",
+    "llm_dir": "/work/public/neo-pkg-llm-chat/cgi-bin/llm"
+  }
+}
+```
 
 ### POST /public/neo-pkg-llm-chat/cgi-bin/install.js
 
@@ -106,7 +154,8 @@ neo-pkg-llm-chat/
 ├── package.json
 └── cgi-bin/
     ├── package.json
-    ├── setup.js            ← 바이너리 다운로드 (neo-pkg-llm 릴리스)
+    ├── setup.js            ← 바이너리 다운로드 (CGI, neo-pkg-llm 릴리스)
+    ├── setup-check.js      ← 설치 여부 확인 (CGI)
     ├── llm-launcher.js     ← 네이티브 바이너리 실행 래퍼
     ├── install.js          ← 서비스 등록
     ├── start.js            ← 서비스 시작
