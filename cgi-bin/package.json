@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "bin": {},
   "scripts": {
-    "setup": "./setup.js"
+    "setup": "./api/setup.js"
   },
   "dependencies": {}
 }
