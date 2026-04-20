@@ -6,14 +6,20 @@ Machbase Neo용 LLM 서비스 패키지.
 ## 설치
 
 ```bash
-# 1) 패키지 복사
+# 1) 패키지 복사 (JSH에서 실행)
 pkg copy github.com/machbase/neo-pkg-llm-chat public/neo-pkg-llm-chat
 
-# 2) 바이너리 다운로드 (CGI)
+# 2) 바이너리 다운로드 (neo-pkg-llm 최신 릴리스)
 curl -X POST http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/setup.js
 
 # 3) 설치 확인
 curl http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/setup-check.js
+
+# 4) 서비스 등록
+curl -X POST http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/install.js
+
+# 5) 서비스 시작 (config.json 생성 및 LLM 백엔드 실행)
+curl -X POST http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/start.js
 ```
 
 ## CGI API
@@ -147,6 +153,21 @@ curl http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/info.js
 {"ok":true,"data":{"port":"8884"}}
 ```
 
+## config.json
+
+`start.js` 실행 시 `llm/config.json`이 생성됩니다. `info.js`는 이 파일의 `server.port`를 읽어 반환합니다.
+
+```json
+{
+  "server": { "port": "8884" },
+  "machbase": { "host": "127.0.0.1", "port": "5654", "user": "sys", "password": "manager" },
+  "claude":  { "api_key": "", "models": [ ... ] },
+  "chatgpt": { "api_key": "", "models": [ ... ] },
+  "gemini":  { "api_key": "", "models": [ ... ] },
+  "ollama":  { "base_url": "", "models": [ ... ] }
+}
+```
+
 ## 구조
 
 ```
@@ -164,4 +185,6 @@ neo-pkg-llm-chat/
     ├── uninstall.js        ← 서비스 제거
     ├── info.js             ← 백엔드 포트 조회 (config.json)
     └── llm/                ← 바이너리 디렉토리 (setup 후 생성)
+        ├── neo-pkg-llm     ← LLM 백엔드 바이너리
+        └── config.json     ← 백엔드 설정 (start 시 생성)
 ```
