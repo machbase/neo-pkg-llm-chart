@@ -2,3 +2,4 @@ node_modules/
 cgi-bin/node_modules/
 cgi-bin/llm/
 cgi-bin/.llm-download.tar.gz
+.DS_Store
