@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { getCurrentUser } from "../utils/auth";
+import { getWsBase } from "../services/baseUrl";
 import type { Message, PkgProvider, PkgSelectedModel } from "../types/chat";
 
 interface ExtMsgIncoming {
@@ -26,10 +27,10 @@ type ExtWsOutgoing =
     | { type: "stop"; user_id: string; session_id: string }
     | { type: "clear"; user_id: string; session_id: string };
 
-const getExtWsUrl = () => {
-    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+const getExtWsUrl = async (): Promise<string> => {
+    const base = await getWsBase();
     const userId = getCurrentUser() ?? "sys";
-    return `${protocol}://${window.location.hostname}:8884/${userId}/ws`;
+    return `${base}/${userId}/ws`;
 };
 
 const generateSessionId = (): string => `sess-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -181,7 +182,7 @@ export const usePkgChat = (pInitialMessages?: Message[]) => {
     }, [handleModelsResponse, handleMsgResponse, handleStopResponse, handleErrorResponse]);
 
     // WebSocket connect
-    const connect = useCallback(() => {
+    const connect = useCallback(async () => {
         const prev = socketRef.current;
         if (prev) {
             prev.onopen = null;
@@ -193,7 +194,8 @@ export const usePkgChat = (pInitialMessages?: Message[]) => {
         }
 
         try {
-            const ws = new WebSocket(getExtWsUrl());
+            const url = await getExtWsUrl();
+            const ws = new WebSocket(url);
             socketRef.current = ws;
 
             ws.onopen = () => {

@@ -27,38 +27,12 @@ function detectPlatform() {
   return `${osPart}-${archPart}`;
 }
 
-function getLatestRelease(callback) {
-  const url = `https://api.github.com/repos/${REPO}/releases/latest`;
-  http.get(url, { headers: { 'User-Agent': 'neo-pkg-llm-chat' } }, (res) => {
-    if (!res.ok) {
-      callback(new Error('HTTP ' + res.statusCode + ': ' + res.text()));
-      return;
-    }
-    const data = res.json();
-    if (!data || !data.assets) {
-      callback(new Error('no assets in release response'));
-      return;
-    }
-    callback(null, data);
-  });
-}
-
-function findAsset(release, platform) {
-  const pattern = `neo-pkg-llm-${platform}.tar.gz`;
-  for (const asset of release.assets) {
-    if (asset.name === pattern) {
-      return asset;
-    }
-  }
-  return null;
-}
-
-function downloadAsset(asset, destPath, callback) {
-  const MAX_REDIRECTS = 5;
+function download(url, destPath, callback) {
+  const MAX_REDIRECTS = 10;
   const headers = { 'User-Agent': 'neo-pkg-llm-chat' };
 
-  function fetch(url, remaining) {
-    http.get(url, { headers }, (res) => {
+  function fetch(fetchUrl, remaining) {
+    http.get(fetchUrl, { headers }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400) {
         const location = res.headers && res.headers.location;
         if (!location) {
@@ -69,7 +43,6 @@ function downloadAsset(asset, destPath, callback) {
           callback(new Error('too many redirects'));
           return;
         }
-        console.println('redirect →', location);
         fetch(location, remaining - 1);
         return;
       }
@@ -87,7 +60,7 @@ function downloadAsset(asset, destPath, callback) {
     });
   }
 
-  fetch(asset.browser_download_url, MAX_REDIRECTS);
+  fetch(url, MAX_REDIRECTS);
 }
 
 function extractTarGz(tarPath, destDir) {
@@ -122,40 +95,28 @@ function extractTarGz(tarPath, destDir) {
 // ── main ──
 
 const platform = detectPlatform();
-console.println('platform:', platform);
+const assetName = `neo-pkg-llm-${platform}.tar.gz`;
+// GitHub /releases/latest/download/ 는 최신 릴리스 asset으로 자동 리다이렉트 (API rate limit 없음)
+const url = `https://github.com/${REPO}/releases/latest/download/${assetName}`;
 
-console.println('fetching latest release...');
-getLatestRelease((err, release) => {
+console.println('platform:', platform);
+console.println('downloading:', url);
+
+const tmpFile = path.join(ROOT, '.llm-download.tar.gz');
+download(url, tmpFile, (err) => {
   if (err) {
     console.println('ERROR:', err.message);
     process.exit(1);
   }
 
-  console.println('release:', release.tag_name);
-
-  const asset = findAsset(release, platform);
-  if (!asset) {
-    console.println('ERROR: no asset found for', platform);
+  console.println('extracting to:', LLM_DIR);
+  try {
+    extractTarGz(tmpFile, LLM_DIR);
+    fs.unlinkSync(tmpFile);
+  } catch (exErr) {
+    console.println('ERROR:', exErr.message);
     process.exit(1);
   }
 
-  console.println('downloading:', asset.name);
-  const tmpFile = path.join(ROOT, '.llm-download.tar.gz');
-  downloadAsset(asset, tmpFile, (dlErr) => {
-    if (dlErr) {
-      console.println('ERROR:', dlErr.message);
-      process.exit(1);
-    }
-
-    console.println('extracting to:', LLM_DIR);
-    try {
-      extractTarGz(tmpFile, LLM_DIR);
-      fs.unlinkSync(tmpFile);
-    } catch (exErr) {
-      console.println('ERROR:', exErr.message);
-      process.exit(1);
-    }
-
-    console.println('done. llm installed at', LLM_DIR);
-  });
+  console.println('done. llm installed at', LLM_DIR);
 });

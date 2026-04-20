@@ -1,10 +1,10 @@
 import type { AppConfig, ApiResponse } from '../types/settings';
 import { defaultConfig } from '../types/settings';
-
-const API_BASE = `${window.location.protocol}//${window.location.hostname}:8884`;
+import { getApiBase } from './baseUrl';
 
 // ── Config list ──
 export async function getConfigList(): Promise<string[]> {
+  const API_BASE = await getApiBase();
   const res = await fetch(`${API_BASE}/api/configs`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const body = (await res.json()) as ApiResponse<{ configs: Array<string | { name: string; running: boolean }> }>;
@@ -15,6 +15,7 @@ export async function getConfigList(): Promise<string[]> {
 
 // ── Config detail ──
 export async function getConfig(name: string): Promise<AppConfig> {
+  const API_BASE = await getApiBase();
   const res = await fetch(`${API_BASE}/api/configs/${encodeURIComponent(name)}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const body = (await res.json()) as ApiResponse<{ config: AppConfig; running: boolean }>;
@@ -33,6 +34,7 @@ export async function getConfig(name: string): Promise<AppConfig> {
 
 // ── Config create ──
 export async function createConfig(config: AppConfig): Promise<string> {
+  const API_BASE = await getApiBase();
   const res = await fetch(`${API_BASE}/api/configs`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -45,6 +47,7 @@ export async function createConfig(config: AppConfig): Promise<string> {
 
 // ── Config update ──
 export async function updateConfig(name: string, config: AppConfig): Promise<string> {
+  const API_BASE = await getApiBase();
   const res = await fetch(`${API_BASE}/api/configs/${encodeURIComponent(name)}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -57,6 +60,7 @@ export async function updateConfig(name: string, config: AppConfig): Promise<str
 
 // ── Config delete ──
 export async function deleteConfig(name: string): Promise<void> {
+  const API_BASE = await getApiBase();
   const res = await fetch(`${API_BASE}/api/configs/${encodeURIComponent(name)}`, {
     method: 'DELETE',
   });
