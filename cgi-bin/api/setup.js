@@ -6,6 +6,7 @@ const http = require('http');
 const fs = require('fs');
 const os = require('os');
 const tar = require('archive/tar');
+const zip = require('archive/zip');
 
 const ARGV1 = process.argv[1];
 const APP_DIR = ARGV1.slice(0, ARGV1.lastIndexOf('/cgi-bin/') + '/cgi-bin'.length);
@@ -82,14 +83,8 @@ function download(url, destPath, callback) {
   fetch(url, MAX_REDIRECTS);
 }
 
-function extractTarGz(tarPath, destDir) {
-  const zlib = require('zlib');
-  const compressed = fs.readFileSync(tarPath, { encoding: 'buffer' });
-  const decompressed = zlib.gunzipSync(compressed);
-  const entries = tar.untarSync(decompressed);
-
+function writeEntries(entries, destDir) {
   fs.mkdirSync(destDir, { recursive: true });
-
   for (const entry of entries) {
     const parts = entry.name.split('/');
     if (parts.length > 1) {
@@ -111,17 +106,33 @@ function extractTarGz(tarPath, destDir) {
   }
 }
 
+function extractTarGz(tarPath, destDir) {
+  const zlib = require('zlib');
+  const compressed = fs.readFileSync(tarPath, { encoding: 'buffer' });
+  const decompressed = zlib.gunzipSync(compressed);
+  const entries = tar.untarSync(decompressed);
+  writeEntries(entries, destDir);
+}
+
+function extractZip(zipPath, destDir) {
+  const buffer = fs.readFileSync(zipPath, { encoding: 'buffer' });
+  const entries = zip.unzipSync(buffer);
+  writeEntries(entries, destDir);
+}
+
 // ── main ──
 
+const IS_WIN = os.platform() === 'windows';
 const platform = detectPlatform();
-const assetName = `neo-pkg-llm-${platform}.tar.gz`;
+const ext = IS_WIN ? '.zip' : '.tar.gz';
+const assetName = `neo-pkg-llm-${platform}${ext}`;
 // GitHub /releases/latest/download/ 는 최신 릴리스 asset으로 자동 리다이렉트 (API rate limit 없음)
 const url = `https://github.com/${REPO}/releases/latest/download/${assetName}`;
 
 log('platform:', platform);
 log('downloading:', url);
 
-const tmpFile = path.join(ROOT, '.llm-download.tar.gz');
+const tmpFile = path.join(ROOT, '.llm-download' + ext);
 download(url, tmpFile, (err) => {
   if (err) {
     reply({ ok: false, reason: err.message || String(err), log: logs });
@@ -130,7 +141,11 @@ download(url, tmpFile, (err) => {
 
   log('extracting to:', LLM_DIR);
   try {
-    extractTarGz(tmpFile, LLM_DIR);
+    if (IS_WIN) {
+      extractZip(tmpFile, LLM_DIR);
+    } else {
+      extractTarGz(tmpFile, LLM_DIR);
+    }
     fs.unlinkSync(tmpFile);
   } catch (exErr) {
     reply({ ok: false, reason: exErr.message || String(exErr), log: logs });
