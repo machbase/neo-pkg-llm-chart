@@ -23,10 +23,10 @@ const DEFAULT_CONFIG = {
     user: 'sys',
     password: 'manager',
   },
-  claude: { api_key: '' },
-  chatgpt: { api_key: '' },
-  gemini: { api_key: '' },
-  ollama: { base_url: '' },
+  claude: { api_key: '', models: [] },
+  chatgpt: { api_key: '', models: [] },
+  gemini: { api_key: '', models: [] },
+  ollama: { base_url: '', models: [] },
 };
 
 const logs = [];
