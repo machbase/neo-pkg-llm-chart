@@ -26,6 +26,11 @@ curl -X POST http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/start
 
 모든 API는 JSON 응답을 반환합니다.
 
+**응답 포맷:**
+- `configs` 만 `{ success, reason, elapse, data }` (프론트/바이너리 호환)
+- 그 외 전부 `{ ok, data, reason }`
+
+
 ### POST /public/neo-pkg-llm-chat/cgi-bin/api/setup
 
 `neo-pkg-llm` 바이너리를 GitHub 최신 릴리스에서 다운로드하고 `llm/` 디렉토리에 압축 해제한 뒤, 기본 `llm/configs/sys.json`을 생성합니다. (이미 있으면 덮어쓰지 않음)
