@@ -3,21 +3,15 @@
 const path = require('path');
 const process = require('process');
 const fs = require('fs');
-const os = require('os');
 const service = require('service');
 
-const ROOT = path.resolve(path.dirname(process.argv[1]));
-const LLM_DIR = path.join(ROOT, 'llm');
+// JSH 가상 경로 그대로 사용 — 서비스 프레임워크가 내부적으로 번역
+// APP_DIR = /work/public/<pkg>/cgi-bin  (argv[1] 에서 cgi-bin 까지 추출)
+const ARGV1 = process.argv[1];
+const APP_DIR = ARGV1.slice(0, ARGV1.lastIndexOf('/cgi-bin/') + '/cgi-bin'.length);
+const LLM_DIR = path.join(APP_DIR, 'api', 'llm');
+const LAUNCHER = path.join(APP_DIR, 'api', 'llm-launcher.js');
 const SERVICE_NAME = 'neo-pkg-llm';
-const LAUNCHER = path.join(ROOT, 'llm-launcher.js');
-
-// JSH 가상 경로(/work/...) → 호스트 실제 경로 변환
-// 서비스 프레임워크가 native OS chdir을 하려면 호스트 경로가 필요함
-const IS_WIN = os.platform() === 'windows';
-const hostWorkDir = path.dirname(process.execPath);
-const workPrefix = IS_WIN ? /^[/\\]work[/\\]/ : /^\/work\//;
-const hostLlmDir = path.join(hostWorkDir, LLM_DIR.replace(workPrefix, ''));
-const hostLauncher = path.join(hostWorkDir, LAUNCHER.replace(workPrefix, ''));
 
 function reply(data) {
   const body = JSON.stringify(data);
@@ -35,8 +29,8 @@ if (method !== 'POST') {
   service.install({
     name: SERVICE_NAME,
     enable: false,
-    working_dir: hostLlmDir,
-    executable: hostLauncher,
+    working_dir: LLM_DIR,
+    executable: LAUNCHER,
   }, (err) => {
     if (err) {
       reply({ ok: false, reason: err.message || String(err) });
