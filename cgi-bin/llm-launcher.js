@@ -22,6 +22,10 @@ const configFile = path.join(hostLlmDir, CONFIG_NAME);
 
 console.println('launching:', executable);
 console.println('config:', configFile);
+console.println('cwd:', hostLlmDir);
+
+// 바이너리는 cwd 기준 상대경로 "configs/"를 스캔하므로 chdir 필수
+process.chdir(hostLlmDir);
 
 const exitCode = process.exec('@' + executable, '-config', configFile);
 process.exit(exitCode);
