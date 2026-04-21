@@ -9,7 +9,7 @@ const os = require('os');
 
 const ROOT = path.resolve(path.dirname(process.argv[1]));
 const LLM_DIR = path.join(ROOT, 'llm');
-const SERVICE_NAME = 'neo-llm';
+const SERVICE_NAME = 'neo-pkg-llm';
 const IS_WIN = os.platform() === 'windows';
 const EXECUTABLE = path.join(LLM_DIR, IS_WIN ? 'neo-pkg-llm.exe' : 'neo-pkg-llm');
 

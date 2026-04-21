@@ -4,7 +4,7 @@ const process = require('process');
 const os = require('os');
 const service = require('service');
 
-const SERVICE_NAME = 'neo-llm';
+const SERVICE_NAME = 'neo-pkg-llm';
 const IS_WIN = os.platform() === 'windows';
 const BINARY_NAME = IS_WIN ? 'neo-pkg-llm.exe' : 'neo-pkg-llm';
 

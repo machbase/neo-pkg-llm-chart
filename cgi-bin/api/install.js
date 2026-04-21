@@ -7,7 +7,7 @@ const service = require('service');
 
 const ROOT = path.resolve(path.dirname(process.argv[1]));
 const LLM_DIR = path.join(ROOT, 'llm');
-const SERVICE_NAME = 'neo-llm';
+const SERVICE_NAME = 'neo-pkg-llm';
 const LAUNCHER = path.join(ROOT, 'llm-launcher.js');
 
 function reply(data) {
