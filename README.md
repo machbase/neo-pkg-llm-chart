@@ -143,6 +143,42 @@ curl -X POST http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/uninstall
 {"ok":true,"data":{"name":"neo-pkg-llm"}}
 ```
 
+### /public/neo-pkg-llm-chat/cgi-bin/api/configs
+
+`llm/configs/sys.json` 설정을 읽고/저장/삭제합니다. **LLM 바이너리가 꺼져 있어도 동작** (부트스트랩용). 응답 포맷은 `{success, reason, elapse, data}`.
+
+| 메서드 | 동작 |
+|---|---|
+| GET | config 조회 (비밀번호/API 키는 `****` 마스킹) |
+| POST / PUT | config 저장 (body에 마스킹된 시크릿이 오면 기존값으로 복원) |
+| DELETE | config 파일 삭제 |
+
+```bash
+# 조회 (마스킹됨)
+curl http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/configs
+```
+```json
+{
+  "success": true,
+  "reason": "success",
+  "elapse": "2ms",
+  "data": {
+    "server": { "port": "8884" },
+    "machbase": { "host": "127.0.0.1", "port": "5654", "user": "sys", "password": "********" },
+    "claude":  { "api_key": "sk-a********z123", "models": [...] }
+  }
+}
+```
+
+```bash
+# 저장
+curl -X POST http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/configs \
+  -H "Content-Type: application/json" \
+  -d '{"server":{"port":"8884"},"machbase":{"host":"127.0.0.1","port":"5654","user":"sys","password":"manager"},"claude":{"api_key":"sk-..."}}'
+```
+
+**적용 범위:** 파일만 저장. LLM 바이너리가 실행 중이라면 변경사항은 **재시작 전까지 반영되지 않습니다**. 설정 변경 후 `/cgi-bin/api/stop` → `/cgi-bin/api/start`로 재시작하세요.
+
 ### GET /public/neo-pkg-llm-chat/cgi-bin/api/info
 
 LLM 백엔드 포트 조회 (`llm/configs/sys.json`의 `server.port`). 프론트엔드가 API 호출 대상 포트를 알아낼 때 사용합니다.
@@ -193,6 +229,7 @@ neo-pkg-llm-chat/
         ├── stop.js             ← 서비스 중지
         ├── uninstall.js        ← 서비스 제거
         ├── info.js             ← 백엔드 포트 조회 (config.json)
+        ├── configs.js          ← config CRUD (GET/POST/PUT/DELETE)
         └── llm/                ← 바이너리 디렉토리 (setup 후 생성)
             ├── neo-pkg-llm     ← LLM 백엔드 바이너리
             └── configs/
