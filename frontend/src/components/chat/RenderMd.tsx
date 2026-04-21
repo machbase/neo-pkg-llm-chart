@@ -66,7 +66,17 @@ export const RenderMd = ({ content, isInterrupt }: RenderMdProps) => {
 
         container.querySelectorAll('pre code').forEach((codeElement) => {
             const preElement = codeElement.parentElement as HTMLPreElement;
-            if (!preElement || preElement.querySelector('.code-copy-button')) return;
+            if (!preElement) return;
+
+            let wrapper = preElement.parentElement;
+            if (!wrapper || !wrapper.classList.contains('code-block-wrapper')) {
+                wrapper = document.createElement('div');
+                wrapper.className = 'code-block-wrapper';
+                preElement.parentElement?.insertBefore(wrapper, preElement);
+                wrapper.appendChild(preElement);
+            }
+
+            if (wrapper.querySelector(':scope > .code-copy-button')) return;
 
             const copyButton = document.createElement('button');
             copyButton.className = 'code-copy-button';
@@ -109,7 +119,7 @@ export const RenderMd = ({ content, isInterrupt }: RenderMdProps) => {
                 }
             });
 
-            preElement.appendChild(copyButton);
+            wrapper.appendChild(copyButton);
         });
     });
 

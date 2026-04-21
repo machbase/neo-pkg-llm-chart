@@ -84,7 +84,7 @@ export function ModelsSection({ claude, chatgpt, gemini, ollama, onChange, error
                 </div>
             </div>
 
-            <div className="flex flex-col gap-3 mb-3 text-xs text-on-surface-tertiary">
+            <div className="flex flex-col gap-3 text-xs text-on-surface-tertiary" style={{ marginBottom: 24 }}>
                 {ALL_PROVIDERS.map((p) => (
                     <div key={p} className="flex items-center gap-3">
                         <span className={`badge badge-${p}`}>{PROVIDER_META[p].label}</span>
@@ -140,7 +140,7 @@ export function ModelsSection({ claude, chatgpt, gemini, ollama, onChange, error
                                 />
                             </td>
                             <td>
-                                <button className="text-error opacity-60 hover:opacity-100" onClick={() => handleRemove(provider, index)} title="Remove">
+                                <button className="btn btn-danger btn-sm btn-icon" onClick={() => handleRemove(provider, index)} title="Remove">
                                     <Icon name="close" className="icon-sm" />
                                 </button>
                             </td>

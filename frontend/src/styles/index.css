@@ -1847,6 +1847,12 @@ details.card > :not(summary) {
     background-color: var(--color-surface-hover);
 }
 
+.data-table td input {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
 /* Provider badges */
 .badge-claude,
 .badge-chatgpt,
@@ -2743,6 +2749,10 @@ details.card > :not(summary) {
 }
 
 /* ─── Code copy button (RenderMd) ─── */
+.code-block-wrapper {
+    position: relative;
+}
+
 .code-copy-button {
     position: absolute;
     top: 6px;
@@ -2755,7 +2765,8 @@ details.card > :not(summary) {
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-md);
     cursor: pointer;
-    opacity: 0.5;
+    opacity: 0;
+    pointer-events: none;
     transition: opacity 0.15s ease, background-color 0.15s ease;
     z-index: 10;
     display: flex;
@@ -2763,8 +2774,14 @@ details.card > :not(summary) {
     justify-content: center;
 }
 
-.code-copy-button:hover {
+.code-block-wrapper:hover .code-copy-button,
+.code-copy-button:focus-visible,
+.code-copy-button.copied {
     opacity: 1;
+    pointer-events: auto;
+}
+
+.code-copy-button:hover {
     background-color: rgba(255, 255, 255, 0.12);
 }
 
@@ -2773,7 +2790,6 @@ details.card > :not(summary) {
 }
 
 .code-copy-button.copied {
-    opacity: 1;
     background-color: var(--color-success-muted);
     border-color: var(--color-success);
 }
@@ -2803,6 +2819,10 @@ details.card > :not(summary) {
     border-radius: var(--radius-md);
     padding: var(--spacing-12) var(--spacing-16);
     overflow-x: auto;
+    margin: 0;
+}
+
+.chat-markdown .code-block-wrapper {
     margin: 0.75em 0;
 }
 
