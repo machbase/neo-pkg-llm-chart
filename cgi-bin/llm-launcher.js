@@ -24,8 +24,14 @@ console.println('launching:', executable);
 console.println('config:', configFile);
 console.println('cwd:', hostLlmDir);
 
-// 바이너리는 cwd 기준 상대경로 "configs/"를 스캔하므로 chdir 필수
-process.chdir(hostLlmDir);
+// process.chdir은 JSH 가상 PWD만 바꾸고 native 바이너리 cwd엔 효과 없음.
+// process.exec도 Dir 옵션 미지원 → shell 래퍼로 cd 후 exec.
+// (바이너리는 "configs/" relative 스캔하므로 cwd가 LLM_DIR이어야 함)
+const shell = IS_WIN ? '@cmd.exe' : '@/bin/sh';
+const flag = IS_WIN ? '/C' : '-c';
+const script = IS_WIN
+  ? `cd /d "${hostLlmDir}" && "${executable}" -config "${configFile}"`
+  : `cd "${hostLlmDir}" && exec "${executable}" -config "${configFile}"`;
 
-const exitCode = process.exec('@' + executable, '-config', configFile);
+const exitCode = process.exec(shell, flag, script);
 process.exit(exitCode);
