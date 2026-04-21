@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 
 const SCRIPT_DIR = path.resolve(path.dirname(process.argv[1]));
-const CONFIG_FILE = path.join(SCRIPT_DIR, 'llm', 'config.json');
+const CONFIG_FILE = path.join(SCRIPT_DIR, 'llm', 'configs', 'sys.json');
 
 function reply(data) {
   const body = JSON.stringify(data);
@@ -19,7 +19,7 @@ try {
   const config = JSON.parse(raw);
   const port = config && config.server && config.server.port;
   if (!port) {
-    reply({ ok: false, reason: 'server.port not found in config.json' });
+    reply({ ok: false, reason: 'server.port not found in configs/sys.json' });
   } else {
     reply({ ok: true, data: { port: String(port) } });
   }

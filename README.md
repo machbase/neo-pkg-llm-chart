@@ -18,7 +18,7 @@ curl http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/setup-check
 # 4) 서비스 등록
 curl -X POST http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/install
 
-# 5) 서비스 시작 (config.json 생성 및 LLM 백엔드 실행)
+# 5) 서비스 시작 (LLM 백엔드 실행)
 curl -X POST http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/start
 ```
 
@@ -28,7 +28,7 @@ curl -X POST http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/start
 
 ### POST /public/neo-pkg-llm-chat/cgi-bin/api/setup
 
-`neo-pkg-llm` 바이너리를 GitHub 최신 릴리스에서 다운로드하고 `llm/` 디렉토리에 압축 해제합니다. (GitHub API 미사용, rate limit 없음)
+`neo-pkg-llm` 바이너리를 GitHub 최신 릴리스에서 다운로드하고 `llm/` 디렉토리에 압축 해제한 뒤, 기본 `llm/configs/sys.json`을 생성합니다. (이미 있으면 덮어쓰지 않음)
 
 ```bash
 curl -X POST http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/setup
@@ -39,11 +39,13 @@ curl -X POST http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/setup
   "ok": true,
   "data": {
     "path": "/work/public/neo-pkg-llm-chat/cgi-bin/api/llm",
+    "config": "/work/public/neo-pkg-llm-chat/cgi-bin/api/llm/configs/sys.json",
     "log": [
       "platform: linux-amd64",
       "downloading: https://github.com/machbase/neo-pkg-llm/releases/latest/download/neo-pkg-llm-linux-amd64.tar.gz",
       "extracting to: /work/public/neo-pkg-llm-chat/cgi-bin/api/llm",
-      "done. llm installed at /work/public/neo-pkg-llm-chat/cgi-bin/api/llm"
+      "done. llm installed at /work/public/neo-pkg-llm-chat/cgi-bin/api/llm",
+      "created default config: /work/public/neo-pkg-llm-chat/cgi-bin/api/llm/configs/sys.json"
     ]
   }
 }
@@ -143,27 +145,25 @@ curl -X POST http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/uninstall
 
 ### GET /public/neo-pkg-llm-chat/cgi-bin/api/info
 
-LLM 백엔드 포트 조회 (`llm/config.json`의 `server.port`). 프론트엔드가 API 호출 대상 포트를 알아낼 때 사용합니다.
+LLM 백엔드 포트 조회 (`llm/configs/sys.json`의 `server.port`). 프론트엔드가 API 호출 대상 포트를 알아낼 때 사용합니다.
 
-> ⚠️ `config.json`은 `start` 이후에 생성됩니다. `start` 이전에 호출하면 실패합니다.
+> `setup` 실행 시 기본 config가 생성되므로 `setup` 직후부터 동작합니다.
 
 ```bash
 curl http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/info
 ```
 
-성공 (start 이후):
 ```json
 {"ok":true,"data":{"port":"8884"}}
 ```
 
-실패 (start 이전):
-```json
-{"ok":false,"reason":"ENOENT: no such file or directory, open '/work/public/neo-pkg-llm-chat/cgi-bin/api/llm/config.json'"}
-```
-
 ## config.json
 
-`start.js` 실행 시 `llm/config.json`이 생성됩니다. `info.js`는 이 파일의 `server.port`를 읽어 반환합니다.
+`setup.js` 실행 시 기본 config가 `llm/configs/sys.json`에 생성됩니다. 파일명(`sys`)은 `machbase.user` 값과 일치하며, 이후 바이너리가 `start`되면 이 파일을 읽어 "sys" 인스턴스를 자동 생성합니다.
+
+- **최초 생성**: `setup.js`가 기본값으로 생성
+- **편집**: 프론트엔드 설정 페이지 또는 `PUT /api/configs/sys` (바이너리 port 8884)로 수정
+- **보존 정책**: `setup`을 재실행해도 기존 파일은 덮어쓰지 않음 (API 키 보존)
 
 ```json
 {
@@ -195,5 +195,6 @@ neo-pkg-llm-chat/
         ├── info.js             ← 백엔드 포트 조회 (config.json)
         └── llm/                ← 바이너리 디렉토리 (setup 후 생성)
             ├── neo-pkg-llm     ← LLM 백엔드 바이너리
-            └── config.json     ← 백엔드 설정 (start 시 생성)
+            └── configs/
+                └── sys.json    ← 기본 인스턴스 설정 (setup 시 생성)
 ```
