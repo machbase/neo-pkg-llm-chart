@@ -148,40 +148,53 @@ curl -X POST http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/uninstall
 {"ok":true,"data":{"name":"neo-pkg-llm"}}
 ```
 
-### /public/neo-pkg-llm-chat/cgi-bin/api/configs
+### /public/neo-pkg-llm-chat/cgi-bin/api/configs (및 /configs/sys)
 
-단일 config(`llm/configs/sys.json`) 조회/저장. 응답 포맷 `{success, reason, elapse, data}`.
+**LLM 바이너리의 `/api/configs` 엔드포인트로의 thin proxy**. CGI는 HTTP 포워딩만 담당, 저장/마스킹/Instance 관리는 전부 바이너리가 처리.
 
-| 메서드 | 동작 |
-|---|---|
-| GET | 단일 config 객체 반환 (비밀번호/API 키 **마스킹**) |
-| POST / PUT | 저장 (body에 마스킹된 시크릿 오면 **기존값 복원**) |
+```
+프론트 → cgi-bin/api/configs → (127.0.0.1:8884로 HTTP 포워딩) → 바이너리
+                                                              ├─ 파일 저장
+                                                              ├─ 마스킹 / 시크릿 복원
+                                                              └─ stopInstance + startInstance (PUT/POST 시)
+```
+
+| URL | 메서드 | 동작 (바이너리) |
+|---|---|---|
+| `/cgi-bin/api/configs` | GET | 파일 목록 반환 `{configs:[{name,running}]}` |
+| `/cgi-bin/api/configs` | POST | 신규 생성 + Instance 시작 |
+| `/cgi-bin/api/configs/sys` | GET | sys 상세 (마스킹됨) |
+| `/cgi-bin/api/configs/sys` | PUT | sys 업데이트 + Instance 자동 재시작 |
+
+#### 장점
+
+- ✅ **자동 Instance 리로드** — PUT 성공 시 바이너리가 stopInstance + startInstance 수행 (수동 restart 불필요)
+- ✅ **단일 소유자** — 파일과 메모리 상태가 항상 일치
+- ✅ **포맷 일관성** — 응답이 바이너리와 동일
+
+#### 요구사항
+
+- **바이너리가 running 상태여야 함** (port 8884로 HTTP 수신 중)
+- 바이너리 down 시 CGI는 `503` 반환: `{"success":false, "reason":"binary not running (...)"}`
+
+#### 예시
 
 ```bash
-# 조회
+# 목록
 curl http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/configs
-```
-```json
-{
-  "success": true,
-  "reason": "success",
-  "elapse": "1ms",
-  "data": {
-    "server": { "port": "8884" },
-    "machbase": { "host": "127.0.0.1", "port": "5654", "user": "sys", "password": "********" },
-    "claude":  { "api_key": "sk-a********z123", "models": [] }
-  }
-}
-```
 
-```bash
-# 저장
-curl -X POST http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/configs \
+# sys 상세 (마스킹됨)
+curl http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/configs/sys
+
+# sys 업데이트 + 자동 재시작
+curl -X PUT http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/configs/sys \
   -H "Content-Type: application/json" \
-  -d '{"server":{"port":"8884"},"machbase":{"host":"127.0.0.1","port":"5654","user":"sys","password":"manager"},"claude":{"api_key":"sk-...","models":[]},"chatgpt":{"api_key":"","models":[]},"gemini":{"api_key":"","models":[]},"ollama":{"base_url":"","models":[]}}'
+  -d '{"server":{"port":"8884"},"machbase":{"host":"127.0.0.1","port":"5654","user":"sys","password":"manager"},"claude":{"api_key":"sk-ant-...","models":[{"name":"sonnet","model_id":"claude-sonnet-4-20250514"}]},"chatgpt":{"api_key":"","models":[]},"gemini":{"api_key":"","models":[]},"ollama":{"base_url":"","models":[]}}'
 ```
 
-**주의:** 파일만 저장. 바이너리 running 시 **`stop → start` 해야 반영**.
+#### 부트스트랩 흐름
+
+`setup.js`가 `llm/configs/sys.json`을 기본값으로 생성하므로 **초기 `setup → install → start` 순서는 그대로**. 그 이후 모든 config 수정은 이 proxy가 바이너리에 위임.
 
 ### GET /public/neo-pkg-llm-chat/cgi-bin/api/info
 
