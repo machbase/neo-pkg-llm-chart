@@ -1,8 +1,8 @@
 'use strict';
 
 // /cgi-bin/api/configs
-//   GET       → config 단일 객체 반환 (마스킹)
-//   POST/PUT  → config 저장 (body의 마스킹된 시크릿은 기존값 복원)
+//   GET  → list: { configs: [{ name }] }
+//   POST → 저장 (파일명 = machbase.user)
 
 const path = require('path');
 const process = require('process');
@@ -11,7 +11,6 @@ const fs = require('fs');
 const ARGV1 = process.argv[1];
 const APP_DIR = ARGV1.slice(0, ARGV1.lastIndexOf('/cgi-bin/') + '/cgi-bin'.length);
 const CONFIGS_DIR = path.join(APP_DIR, 'llm', 'configs');
-const CONFIG_FILE = path.join(CONFIGS_DIR, 'sys.json');
 
 const _tick = Date.now();
 
@@ -36,79 +35,18 @@ function parseBody() {
   return JSON.parse(raw);
 }
 
-// --- secret masking ---
-
-function maskSecret(s) {
-  if (!s) return '';
-  if (s.length <= 8) return '********';
-  return s.substring(0, 4) + '********' + s.substring(s.length - 4);
+function listConfigs() {
+  if (!fs.existsSync(CONFIGS_DIR)) return [];
+  return fs.readdirSync(CONFIGS_DIR)
+    .filter((name) => name.endsWith('.json'))
+    .map((name) => ({ name: name.slice(0, -5) }));
 }
-
-function maskedCopy(cfg) {
-  const copy = JSON.parse(JSON.stringify(cfg));
-  if (copy.machbase && copy.machbase.password) {
-    copy.machbase.password = maskSecret(copy.machbase.password);
-  }
-  if (copy.claude && copy.claude.api_key) {
-    copy.claude.api_key = maskSecret(copy.claude.api_key);
-  }
-  if (copy.chatgpt && copy.chatgpt.api_key) {
-    copy.chatgpt.api_key = maskSecret(copy.chatgpt.api_key);
-  }
-  if (copy.gemini && copy.gemini.api_key) {
-    copy.gemini.api_key = maskSecret(copy.gemini.api_key);
-  }
-  return copy;
-}
-
-function isMasked(s) {
-  return typeof s === 'string' && s.indexOf('********') !== -1;
-}
-
-function restoreSecrets(incoming, existing) {
-  if (!existing) return incoming;
-  if (incoming.machbase && isMasked(incoming.machbase.password) && existing.machbase) {
-    incoming.machbase.password = existing.machbase.password;
-  }
-  if (incoming.claude && isMasked(incoming.claude.api_key) && existing.claude) {
-    incoming.claude.api_key = existing.claude.api_key;
-  }
-  if (incoming.chatgpt && isMasked(incoming.chatgpt.api_key) && existing.chatgpt) {
-    incoming.chatgpt.api_key = existing.chatgpt.api_key;
-  }
-  if (incoming.gemini && isMasked(incoming.gemini.api_key) && existing.gemini) {
-    incoming.gemini.api_key = existing.gemini.api_key;
-  }
-  return incoming;
-}
-
-// --- file IO ---
-
-function readConfig() {
-  if (!fs.existsSync(CONFIG_FILE)) return null;
-  const raw = fs.readFileSync(CONFIG_FILE, { encoding: 'utf8' });
-  return JSON.parse(raw);
-}
-
-function saveConfig(cfg) {
-  if (!fs.existsSync(CONFIGS_DIR)) {
-    fs.mkdirSync(CONFIGS_DIR, { recursive: true });
-  }
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2));
-}
-
-// --- dispatch ---
 
 const method = (process.env.get('REQUEST_METHOD') || 'GET').toUpperCase();
 
 if (method === 'GET') {
-  const cfg = readConfig();
-  if (!cfg) {
-    reply(404, null, 'config not found');
-  } else {
-    reply(200, maskedCopy(cfg));
-  }
-} else if (method === 'POST' || method === 'PUT') {
+  reply(200, { configs: listConfigs() });
+} else if (method === 'POST') {
   let body = null;
   let parseErr = null;
   try {
@@ -120,14 +58,23 @@ if (method === 'GET') {
     reply(400, null, 'invalid JSON: ' + (parseErr.message || String(parseErr)));
   } else if (!body) {
     reply(400, null, 'request body required');
+  } else if (!body.machbase || !body.machbase.user) {
+    reply(400, null, 'machbase.user is required');
   } else {
-    const existing = readConfig();
-    restoreSecrets(body, existing);
-    try {
-      saveConfig(body);
-      reply(200, { path: CONFIG_FILE });
-    } catch (err) {
-      reply(500, null, 'failed to save: ' + (err.message || String(err)));
+    const name = body.machbase.user;
+    if (name.indexOf('/') !== -1 || name.indexOf('\\') !== -1 || name.indexOf('..') !== -1) {
+      reply(400, null, 'machbase.user contains invalid characters');
+    } else {
+      try {
+        if (!fs.existsSync(CONFIGS_DIR)) {
+          fs.mkdirSync(CONFIGS_DIR, { recursive: true });
+        }
+        const filePath = path.join(CONFIGS_DIR, name + '.json');
+        fs.writeFileSync(filePath, JSON.stringify(body, null, 2));
+        reply(200, { name: name });
+      } catch (err) {
+        reply(500, null, 'failed to save: ' + (err.message || String(err)));
+      }
     }
   }
 } else {
