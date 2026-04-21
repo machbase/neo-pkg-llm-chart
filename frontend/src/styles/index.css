@@ -2841,6 +2841,8 @@ details.card > :not(summary) {
     border-collapse: collapse;
     margin: 0.75em 0;
     width: 100%;
+    display: block;
+    overflow-x: auto;
 }
 
 .chat-markdown th,

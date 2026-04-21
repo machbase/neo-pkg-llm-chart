@@ -39,8 +39,7 @@ export const getLlmPort = (): Promise<string> => {
 };
 
 export const getApiBase = async (): Promise<string> => {
-    const port = await getLlmPort();
-    return `${window.location.protocol}//${window.location.hostname}:${port}${URL_PREFIX}`;
+    return `${window.location.protocol}//${window.location.hostname}:${window.location.port}${URL_PREFIX}`;
 };
 
 export const getWsBase = async (): Promise<string> => {
