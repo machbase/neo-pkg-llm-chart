@@ -1,27 +1,27 @@
 'use strict';
 
-// /cgi-bin/api/configs
-//   GET  → list: { configs: [{ name }] }
-//   POST → 저장 (파일명 = machbase.user)
+// /cgi-bin/api/configs  — 바이너리 /api/configs 로의 thin proxy
+//   GET  → list
+//   POST → save + start instance (바이너리가 처리)
 
 const path = require('path');
 const process = require('process');
 const fs = require('fs');
+const http = require('http');
 
 const ARGV1 = process.argv[1];
 const APP_DIR = ARGV1.slice(0, ARGV1.lastIndexOf('/cgi-bin/') + '/cgi-bin'.length);
-const CONFIGS_DIR = path.join(APP_DIR, 'llm', 'configs');
+const BOOTSTRAP_CONFIG = path.join(APP_DIR, 'llm', 'configs', 'sys.json');
 
 const _tick = Date.now();
 
-function reply(status, data, reason) {
+function replyError(status, reason) {
   const elapse = (Date.now() - _tick) + 'ms';
-  const success = status >= 200 && status < 300;
   const body = JSON.stringify({
-    success,
-    reason: reason || (success ? 'success' : 'error'),
-    elapse,
-    data: data !== undefined ? data : null,
+    success: false,
+    reason: reason,
+    elapse: elapse,
+    data: null,
   });
   process.stdout.write('Content-Type: application/json\r\n');
   process.stdout.write('Status: ' + status + '\r\n');
@@ -29,54 +29,72 @@ function reply(status, data, reason) {
   process.stdout.write(body);
 }
 
-function parseBody() {
-  const raw = process.stdin.read();
-  if (!raw) return null;
-  return JSON.parse(raw);
+function forwardResponse(statusCode, body) {
+  process.stdout.write('Content-Type: application/json\r\n');
+  process.stdout.write('Status: ' + statusCode + '\r\n');
+  process.stdout.write('\r\n');
+  process.stdout.write(body || '');
 }
 
-function listConfigs() {
-  if (!fs.existsSync(CONFIGS_DIR)) return [];
-  return fs.readdirSync(CONFIGS_DIR)
-    .filter((name) => name.endsWith('.json'))
-    .map((name) => ({ name: name.slice(0, -5) }));
+function getBinaryPort() {
+  try {
+    if (fs.existsSync(BOOTSTRAP_CONFIG)) {
+      const raw = fs.readFileSync(BOOTSTRAP_CONFIG, { encoding: 'utf8' });
+      const cfg = JSON.parse(raw);
+      return (cfg && cfg.server && cfg.server.port) || '8884';
+    }
+  } catch (e) {
+    // ignore
+  }
+  return '8884';
+}
+
+function proxy(method, endpoint, bodyStr) {
+  const port = getBinaryPort();
+  const url = 'http://127.0.0.1:' + port + endpoint;
+  let handled = false;
+
+  try {
+    const req = http.request(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json' },
+    }, function (res) {
+      if (handled) return;
+      handled = true;
+      const buf = res.readBodyBuffer();
+      forwardResponse(res.statusCode, buf ? buf.toString() : '');
+    });
+
+    if (req.on) {
+      req.on('error', function (err) {
+        if (handled) return;
+        handled = true;
+        replyError(503, 'binary not running (' + (err && err.message ? err.message : 'connection failed') + ')');
+      });
+    }
+
+    if (bodyStr) {
+      req.write(bodyStr);
+    }
+    req.end();
+  } catch (e) {
+    if (handled) return;
+    handled = true;
+    replyError(503, 'binary not running: ' + (e.message || String(e)));
+  }
 }
 
 const method = (process.env.get('REQUEST_METHOD') || 'GET').toUpperCase();
 
 if (method === 'GET') {
-  reply(200, { configs: listConfigs() });
+  proxy('GET', '/api/configs', null);
 } else if (method === 'POST') {
-  let body = null;
-  let parseErr = null;
-  try {
-    body = parseBody();
-  } catch (err) {
-    parseErr = err;
-  }
-  if (parseErr) {
-    reply(400, null, 'invalid JSON: ' + (parseErr.message || String(parseErr)));
-  } else if (!body) {
-    reply(400, null, 'request body required');
-  } else if (!body.machbase || !body.machbase.user) {
-    reply(400, null, 'machbase.user is required');
+  const raw = process.stdin.read();
+  if (!raw) {
+    replyError(400, 'request body required');
   } else {
-    const name = body.machbase.user;
-    if (name.indexOf('/') !== -1 || name.indexOf('\\') !== -1 || name.indexOf('..') !== -1) {
-      reply(400, null, 'machbase.user contains invalid characters');
-    } else {
-      try {
-        if (!fs.existsSync(CONFIGS_DIR)) {
-          fs.mkdirSync(CONFIGS_DIR, { recursive: true });
-        }
-        const filePath = path.join(CONFIGS_DIR, name + '.json');
-        fs.writeFileSync(filePath, JSON.stringify(body, null, 2));
-        reply(200, { name: name });
-      } catch (err) {
-        reply(500, null, 'failed to save: ' + (err.message || String(err)));
-      }
-    }
+    proxy('POST', '/api/configs', raw);
   }
 } else {
-  reply(405, null, 'method not allowed');
+  replyError(405, 'method not allowed');
 }
