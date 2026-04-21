@@ -156,7 +156,6 @@ curl -X POST http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/uninstall
 |---|---|
 | GET | config 조회 (비밀번호/API 키는 `****` 마스킹) |
 | POST / PUT | config 저장 (body에 마스킹된 시크릿이 오면 기존값으로 복원) |
-| DELETE | config 파일 삭제 |
 
 ```bash
 # 조회 (마스킹됨)
@@ -240,5 +239,5 @@ neo-pkg-llm-chat/
         ├── stop.js             ← 서비스 중지
         ├── uninstall.js        ← 서비스 제거
         ├── info.js             ← 백엔드 포트 조회
-        └── configs.js          ← config CRUD (GET/POST/PUT/DELETE)
+        └── configs.js          ← config 조회/저장 (GET/POST/PUT)
 ```

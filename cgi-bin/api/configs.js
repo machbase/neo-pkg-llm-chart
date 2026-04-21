@@ -129,17 +129,6 @@ if (method === 'GET') {
       reply(500, null, 'failed to save: ' + (err.message || String(err)));
     }
   }
-} else if (method === 'DELETE') {
-  if (!fs.existsSync(CONFIG_FILE)) {
-    reply(404, null, 'config not found');
-  } else {
-    try {
-      fs.unlinkSync(CONFIG_FILE);
-      reply(200, { path: CONFIG_FILE });
-    } catch (err) {
-      reply(500, null, 'failed to delete: ' + (err.message || String(err)));
-    }
-  }
 } else {
   reply(405, null, 'method not allowed');
 }
