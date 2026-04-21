@@ -11,23 +11,7 @@ const ARGV1 = process.argv[1];
 const APP_DIR = ARGV1.slice(0, ARGV1.lastIndexOf('/cgi-bin/') + '/cgi-bin'.length);
 const ROOT = path.resolve(path.dirname(ARGV1));
 const LLM_DIR = path.join(APP_DIR, 'llm');
-const CONFIGS_DIR = path.join(LLM_DIR, 'configs');
-const SYS_CONFIG = path.join(CONFIGS_DIR, 'sys.json');
 const REPO = 'machbase/neo-pkg-llm';
-
-const DEFAULT_CONFIG = {
-  server: { port: '8884' },
-  machbase: {
-    host: '127.0.0.1',
-    port: '5654',
-    user: 'sys',
-    password: 'manager',
-  },
-  claude: { api_key: '', models: [] },
-  chatgpt: { api_key: '', models: [] },
-  gemini: { api_key: '', models: [] },
-  ollama: { base_url: '', models: [] },
-};
 
 const logs = [];
 function log() {
@@ -154,20 +138,5 @@ download(url, tmpFile, (err) => {
   }
 
   log('done. llm installed at', LLM_DIR);
-
-  // 기본 config 씨앗 생성 (이미 있으면 유지 — 사용자가 입력한 API 키 보존)
-  try {
-    if (!fs.existsSync(SYS_CONFIG)) {
-      fs.mkdirSync(CONFIGS_DIR, { recursive: true });
-      fs.writeFileSync(SYS_CONFIG, JSON.stringify(DEFAULT_CONFIG, null, 2));
-      log('created default config:', SYS_CONFIG);
-    } else {
-      log('config already exists, skipped:', SYS_CONFIG);
-    }
-  } catch (cfgErr) {
-    reply({ ok: false, reason: cfgErr.message || String(cfgErr), log: logs });
-    return;
-  }
-
-  reply({ ok: true, data: { path: LLM_DIR, config: SYS_CONFIG, log: logs } });
+  reply({ ok: true, data: { path: LLM_DIR, log: logs } });
 });

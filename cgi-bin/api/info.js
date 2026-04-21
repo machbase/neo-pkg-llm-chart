@@ -1,12 +1,9 @@
 'use strict';
 
-const process = require('process');
-const path = require('path');
-const fs = require('fs');
+// LLM 바이너리 포트 반환 (하드코딩). 프론트가 API_BASE 구성 시 사용.
+// sys.json 없어도 동작 → 첫 접속 시 settings 탭으로 분기 가능.
 
-const ARGV1 = process.argv[1];
-const APP_DIR = ARGV1.slice(0, ARGV1.lastIndexOf('/cgi-bin/') + '/cgi-bin'.length);
-const CONFIG_FILE = path.join(APP_DIR, 'llm', 'configs', 'sys.json');
+const process = require('process');
 
 function reply(data) {
   const body = JSON.stringify(data);
@@ -15,15 +12,4 @@ function reply(data) {
   process.stdout.write(body);
 }
 
-try {
-  const raw = fs.readFileSync(CONFIG_FILE, { encoding: 'utf8' });
-  const config = JSON.parse(raw);
-  const port = config && config.server && config.server.port;
-  if (!port) {
-    reply({ ok: false, reason: 'server.port not found in configs/sys.json' });
-  } else {
-    reply({ ok: true, data: { port: String(port) } });
-  }
-} catch (err) {
-  reply({ ok: false, reason: err.message || String(err) });
-}
+reply({ ok: true, data: { port: '8884' } });

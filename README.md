@@ -33,7 +33,9 @@ curl -X POST http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/start
 
 ### POST /public/neo-pkg-llm-chat/cgi-bin/api/setup
 
-`neo-pkg-llm` 바이너리를 GitHub 최신 릴리스에서 다운로드하고 `llm/` 디렉토리에 압축 해제한 뒤, 기본 `llm/configs/sys.json`을 생성합니다. (이미 있으면 덮어쓰지 않음)
+`neo-pkg-llm` 바이너리를 GitHub 최신 릴리스에서 다운로드하고 `llm/` 디렉토리에 압축 해제합니다.
+
+> `sys.json`은 생성하지 않음. 프론트 첫 접속 시 settings 탭으로 유도되며, user가 입력 후 `POST /configs`하면 파일 생성됨.
 
 ```bash
 curl -X POST http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/setup
