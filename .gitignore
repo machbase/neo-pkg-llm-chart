@@ -1,5 +1,5 @@
 node_modules/
 cgi-bin/node_modules/
-cgi-bin/api/llm/
-cgi-bin/api/.llm-download.tar.gz
+cgi-bin/llm/
+cgi-bin/.llm-download.tar.gz
 .DS_Store

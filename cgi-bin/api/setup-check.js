@@ -5,8 +5,9 @@ const process = require('process');
 const fs = require('fs');
 const os = require('os');
 
-const ROOT = path.resolve(path.dirname(process.argv[1]));
-const LLM_DIR = path.join(ROOT, 'llm');
+const ARGV1 = process.argv[1];
+const APP_DIR = ARGV1.slice(0, ARGV1.lastIndexOf('/cgi-bin/') + '/cgi-bin'.length);
+const LLM_DIR = path.join(APP_DIR, 'llm');
 const IS_WIN = os.platform() === 'windows';
 const BIN_NAME = IS_WIN ? 'neo-pkg-llm.exe' : 'neo-pkg-llm';
 const BIN_PATH = path.join(LLM_DIR, BIN_NAME);

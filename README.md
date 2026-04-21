@@ -226,19 +226,19 @@ neo-pkg-llm-chat/
 ├── package.json
 └── cgi-bin/
     ├── package.json
-    └── api/
+    ├── llm-launcher.js         ← 네이티브 바이너리 실행 래퍼
+    ├── llm/                    ← 바이너리 디렉토리 (setup 후 생성)
+    │   ├── neo-pkg-llm         ← LLM 백엔드 바이너리
+    │   └── configs/
+    │       └── sys.json        ← 기본 인스턴스 설정 (setup 시 생성)
+    └── api/                    ← HTTP 엔드포인트만
         ├── setup.js            ← 바이너리 다운로드 (CGI, neo-pkg-llm 릴리스)
         ├── setup-check.js      ← 설치 여부 확인 (CGI)
-        ├── llm-launcher.js     ← 네이티브 바이너리 실행 래퍼
         ├── install.js          ← 서비스 등록
         ├── start.js            ← 서비스 시작
         ├── status.js           ← 상태 확인
         ├── stop.js             ← 서비스 중지
         ├── uninstall.js        ← 서비스 제거
-        ├── info.js             ← 백엔드 포트 조회 (config.json)
-        ├── configs.js          ← config CRUD (GET/POST/PUT/DELETE)
-        └── llm/                ← 바이너리 디렉토리 (setup 후 생성)
-            ├── neo-pkg-llm     ← LLM 백엔드 바이너리
-            └── configs/
-                └── sys.json    ← 기본 인스턴스 설정 (setup 시 생성)
+        ├── info.js             ← 백엔드 포트 조회
+        └── configs.js          ← config CRUD (GET/POST/PUT/DELETE)
 ```

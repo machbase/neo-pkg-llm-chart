@@ -7,8 +7,10 @@ const fs = require('fs');
 const os = require('os');
 const tar = require('archive/tar');
 
-const ROOT = path.resolve(path.dirname(process.argv[1]));
-const LLM_DIR = path.join(ROOT, 'llm');
+const ARGV1 = process.argv[1];
+const APP_DIR = ARGV1.slice(0, ARGV1.lastIndexOf('/cgi-bin/') + '/cgi-bin'.length);
+const ROOT = path.resolve(path.dirname(ARGV1));
+const LLM_DIR = path.join(APP_DIR, 'llm');
 const CONFIGS_DIR = path.join(LLM_DIR, 'configs');
 const SYS_CONFIG = path.join(CONFIGS_DIR, 'sys.json');
 const REPO = 'machbase/neo-pkg-llm';

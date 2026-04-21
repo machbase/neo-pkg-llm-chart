@@ -9,8 +9,8 @@ const service = require('service');
 // APP_DIR = /work/public/<pkg>/cgi-bin  (argv[1] 에서 cgi-bin 까지 추출)
 const ARGV1 = process.argv[1];
 const APP_DIR = ARGV1.slice(0, ARGV1.lastIndexOf('/cgi-bin/') + '/cgi-bin'.length);
-const LLM_DIR = path.join(APP_DIR, 'api', 'llm');
-const LAUNCHER = path.join(APP_DIR, 'api', 'llm-launcher.js');
+const LLM_DIR = path.join(APP_DIR, 'llm');
+const LAUNCHER = path.join(APP_DIR, 'llm-launcher.js');
 const SERVICE_NAME = 'neo-pkg-llm';
 
 function reply(data) {
