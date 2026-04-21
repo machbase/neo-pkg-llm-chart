@@ -203,14 +203,16 @@ curl http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/info
 
 ```json
 {
-  "server": { "port": "8884" },
+  "server":   { "port": "8884" },
   "machbase": { "host": "127.0.0.1", "port": "5654", "user": "sys", "password": "manager" },
-  "claude":  { "api_key": "", "models": [ ... ] },
-  "chatgpt": { "api_key": "", "models": [ ... ] },
-  "gemini":  { "api_key": "", "models": [ ... ] },
-  "ollama":  { "base_url": "", "models": [ ... ] }
+  "claude":   { "api_key": "" },
+  "chatgpt":  { "api_key": "" },
+  "gemini":   { "api_key": "" },
+  "ollama":   { "base_url": "" }
 }
 ```
+
+> 모델 목록(`models` 배열)은 초기에는 비어있고, 프론트 설정 페이지나 `POST /api/configs`로 추가됩니다.
 
 ## 구조
 

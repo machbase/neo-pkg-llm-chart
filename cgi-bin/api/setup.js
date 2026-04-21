@@ -14,41 +14,17 @@ const SYS_CONFIG = path.join(CONFIGS_DIR, 'sys.json');
 const REPO = 'machbase/neo-pkg-llm';
 
 const DEFAULT_CONFIG = {
-  server: {
-    port: '8884',
-  },
+  server: { port: '8884' },
   machbase: {
     host: '127.0.0.1',
     port: '5654',
     user: 'sys',
     password: 'manager',
   },
-  claude: {
-    api_key: '',
-    models: [
-      { name: 'sonnet', model_id: 'claude-sonnet-4-20250514' },
-      { name: 'haiku', model_id: 'claude-haiku-4-5-20251001' },
-    ],
-  },
-  chatgpt: {
-    api_key: '',
-    models: [
-      { name: 'gpt-4o', model_id: '' },
-      { name: 'gpt-4o-mini', model_id: '' },
-    ],
-  },
-  gemini: {
-    api_key: '',
-    models: [
-      { name: 'gemini-2.5-flash', model_id: 'gemini-2.5-flash-preview-04-17' },
-    ],
-  },
-  ollama: {
-    base_url: '',
-    models: [
-      { name: 'qwen3:8b', model_id: '' },
-    ],
-  },
+  claude: { api_key: '' },
+  chatgpt: { api_key: '' },
+  gemini: { api_key: '' },
+  ollama: { base_url: '' },
 };
 
 const logs = [];
