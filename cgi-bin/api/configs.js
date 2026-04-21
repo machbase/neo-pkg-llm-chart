@@ -58,20 +58,20 @@ function proxy(method, endpoint, bodyStr) {
     const req = http.request(url, {
       method: method,
       headers: { 'Content-Type': 'application/json' },
-    }, function (res) {
-      if (handled) return;
-      handled = true;
-      const buf = res.readBodyBuffer();
-      forwardResponse(res.statusCode, buf ? buf.toString() : '');
     });
 
-    if (req.on) {
-      req.on('error', function (err) {
-        if (handled) return;
-        handled = true;
-        replyError(503, 'binary not running (' + (err && err.message ? err.message : 'connection failed') + ')');
-      });
-    }
+    req.on('response', function (response) {
+      if (handled) return;
+      handled = true;
+      const text = response.text ? response.text() : '';
+      forwardResponse(response.statusCode, text);
+    });
+
+    req.on('error', function (err) {
+      if (handled) return;
+      handled = true;
+      replyError(503, 'binary not running (' + (err && err.message ? err.message : 'connection failed') + ')');
+    });
 
     if (bodyStr) {
       req.write(bodyStr);
