@@ -148,18 +148,39 @@ curl -X POST http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/uninstall
 {"ok":true,"data":{"name":"neo-pkg-llm"}}
 ```
 
-### /public/neo-pkg-llm-chat/cgi-bin/api/configs
+### /public/neo-pkg-llm-chat/cgi-bin/api/configs (목록)
 
-`llm/configs/sys.json` 설정을 읽고/저장/삭제합니다. **LLM 바이너리가 꺼져 있어도 동작** (부트스트랩용). 응답 포맷은 `{success, reason, elapse, data}`.
+`llm/configs/` 디렉토리의 config 파일 목록 또는 신규 저장. 바이너리의 `/api/configs`와 shape 동일. **LLM 바이너리 꺼져있어도 동작**. 응답 포맷 `{success, reason, elapse, data}`.
 
 | 메서드 | 동작 |
 |---|---|
-| GET | config 조회 (비밀번호/API 키는 `****` 마스킹) |
-| POST / PUT | config 저장 (body에 마스킹된 시크릿이 오면 기존값으로 복원) |
+| GET | 파일명 목록: `{configs: [{name}]}` |
+| POST | 신규 저장 (파일명 = `machbase.user`) |
+
+```bash
+# 목록
+curl http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/configs
+# → {"success":true,..."data":{"configs":[{"name":"sys"}]}}
+
+# 저장 (body의 machbase.user가 파일명)
+curl -X POST http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/configs \
+  -H "Content-Type: application/json" \
+  -d '{"server":{"port":"8884"},"machbase":{"host":"127.0.0.1","port":"5654","user":"sys","password":"manager"},"claude":{"api_key":"sk-...","models":[]},"chatgpt":{"api_key":"","models":[]},"gemini":{"api_key":"","models":[]},"ollama":{"base_url":"","models":[]}}'
+# → {"success":true,..."data":{"name":"sys","path":"..."}}
+```
+
+### /public/neo-pkg-llm-chat/cgi-bin/api/configs/sys (개별)
+
+특정 user(`sys`)의 config 조회/업데이트.
+
+| 메서드 | 동작 |
+|---|---|
+| GET | 조회: `{config, running}` — 비밀번호/API 키 **마스킹** |
+| PUT | 업데이트 — body에 마스킹된 시크릿 오면 **기존값 복원** |
 
 ```bash
 # 조회 (마스킹됨)
-curl http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/configs
+curl http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/configs/sys
 ```
 ```json
 {
@@ -167,21 +188,24 @@ curl http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/configs
   "reason": "success",
   "elapse": "2ms",
   "data": {
-    "server": { "port": "8884" },
-    "machbase": { "host": "127.0.0.1", "port": "5654", "user": "sys", "password": "********" },
-    "claude":  { "api_key": "sk-a********z123", "models": [...] }
+    "config": {
+      "server": { "port": "8884" },
+      "machbase": { "host": "127.0.0.1", "port": "5654", "user": "sys", "password": "********" },
+      "claude":  { "api_key": "sk-a********z123", "models": [] }
+    },
+    "running": null
   }
 }
 ```
 
 ```bash
-# 저장
-curl -X POST http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/configs \
+# 업데이트
+curl -X PUT http://localhost:5654/public/neo-pkg-llm-chat/cgi-bin/api/configs/sys \
   -H "Content-Type: application/json" \
-  -d '{"server":{"port":"8884"},"machbase":{"host":"127.0.0.1","port":"5654","user":"sys","password":"manager"},"claude":{"api_key":"sk-..."}}'
+  -d '{...}'
 ```
 
-**적용 범위:** 파일만 저장. LLM 바이너리가 실행 중이라면 변경사항은 **재시작 전까지 반영되지 않습니다**. 설정 변경 후 `/cgi-bin/api/stop` → `/cgi-bin/api/start`로 재시작하세요.
+**주의:** 파일만 저장. 바이너리 running 시 **`stop → start` 해야 반영**.
 
 ### GET /public/neo-pkg-llm-chat/cgi-bin/api/info
 
@@ -239,5 +263,7 @@ neo-pkg-llm-chat/
         ├── stop.js             ← 서비스 중지
         ├── uninstall.js        ← 서비스 제거
         ├── info.js             ← 백엔드 포트 조회
-        └── configs.js          ← config 조회/저장 (GET/POST/PUT)
+        ├── configs.js          ← 목록/신규 저장 (GET/POST)
+        └── configs/
+            └── sys.js          ← sys 개별 조회/업데이트 (GET/PUT)
 ```
