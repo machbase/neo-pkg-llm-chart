@@ -27,12 +27,10 @@ function reply(status, data, reason) {
 }
 
 function parseBody() {
-  const lines = [];
-  let line;
-  while ((line = process.stdin.readLine()) !== null) {
-    lines.push(line);
-  }
-  const raw = lines.join('');
+  // process.stdin.read()로 전체 한 번에 읽음.
+  // readLine() 루프는 매 호출 새 bufio.Scanner를 만들어 버퍼 바이트가 손실됨
+  // (multi-line JSON body 파싱 실패 → "Unexpected end of JSON input").
+  const raw = process.stdin.read();
   if (!raw) return null;
   return JSON.parse(raw);
 }
