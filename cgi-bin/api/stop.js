@@ -15,8 +15,9 @@ function reply(data) {
   process.stdout.write(body);
 }
 
-const method = (process.env.get('REQUEST_METHOD') || 'GET').toUpperCase();
-if (method !== 'POST') {
+// HTTP 호출은 POST만 허용. CLI 실행(env 없음)은 통과.
+const method = (process.env.get('REQUEST_METHOD') || '').toUpperCase();
+if (method !== '' && method !== 'POST') {
   reply({ ok: false, reason: 'method not allowed' });
 } else {
   if (IS_WIN) {
