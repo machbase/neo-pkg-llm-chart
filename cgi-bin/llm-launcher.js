@@ -1,27 +1,66 @@
 'use strict';
 
+// JSH 런타임에서 실행됨. cgi-bin/config.json의 port를 읽어 -port 로 전달하고,
+// -config는 configs/ 밖 경로(_boot.json)로 지정하여 Manager가 sys.json을
+// 자동 생성하지 않도록 한다. Linux / macOS / Windows 공통 지원.
+
 const process = require('process');
-const path = require('path');
+const pathLib = require('path');
 const os = require('os');
+const fs = require('fs');
 
-// JSH 가상 경로 기준
-const SCRIPT_DIR = path.resolve(path.dirname(process.argv[1]));
-const LLM_DIR = path.join(SCRIPT_DIR, 'llm');
 const IS_WIN = os.platform() === 'windows';
+const posix = pathLib;
+const hostPath = IS_WIN ? pathLib.win32 : pathLib;
+
+// ── JSH 가상경로 (POSIX 고정) ──
+const SCRIPT_DIR = posix.resolve(posix.dirname(process.argv[1])); // /work/.../cgi-bin
+const LLM_DIR = posix.join(SCRIPT_DIR, 'llm');                    // /work/.../cgi-bin/llm
+const CONFIG_JSON = posix.join(SCRIPT_DIR, 'config.json');        // cgi-bin/config.json
 const BIN_NAME = IS_WIN ? 'neo-pkg-llm.exe' : 'neo-pkg-llm';
-const CONFIG_NAME = 'config.json';
 
-// 호스트 경로: execPath의 디렉토리가 /work 마운트 포인트
-const hostWorkDir = path.dirname(process.execPath);
-const workPrefix = IS_WIN ? /^[/\\]work[/\\]/ : /^\/work\//;
-const relPath = LLM_DIR.replace(workPrefix, '');
-const hostLlmDir = path.join(hostWorkDir, relPath);
+// ── port 읽기 (없으면 기본 8884) ──
+let port = '8884';
+try {
+  if (fs.existsSync(CONFIG_JSON)) {
+    const cfg = JSON.parse(fs.readFileSync(CONFIG_JSON, { encoding: 'utf8' }));
+    if (cfg && cfg.server && cfg.server.port) port = String(cfg.server.port);
+  }
+} catch (e) {
+  // 기본값 사용
+}
 
-const executable = path.join(hostLlmDir, BIN_NAME);
-const configFile = path.join(hostLlmDir, CONFIG_NAME);
+// ── 호스트 경로 변환 ──
+const hostWorkDir = hostPath.dirname(process.execPath);
+const relFromWork = LLM_DIR.replace(/^\/work\//, '');
+const hostLlmDir = hostPath.join(hostWorkDir, relFromWork);
+const executable = hostPath.join(hostLlmDir, BIN_NAME);
+// throwaway bootstrap — configs/ 밖이라 Manager.LoadAll 스캔 대상 아님
+// → 사용자가 설정 저장하기 전까지 sys.json 자동 생성 안 됨 → 프론트는 settings 탭으로 분기
+const bootConfig = hostPath.join(hostLlmDir, '_boot.json');
 
 console.println('launching:', executable);
-console.println('config:', configFile);
+console.println('port:', port);
+console.println('boot config:', bootConfig);
+console.println('cwd:', hostLlmDir);
 
-const exitCode = process.exec('@' + executable, '-config', configFile);
+// 바이너리 Manager는 configs/ 를 cwd 기준 상대경로로 스캔하므로
+// cwd = hostLlmDir (= cgi-bin/llm) 이어야 configs/sys.json이 올바른 위치에 생성됨.
+var exitCode;
+if (IS_WIN) {
+  // cmd.exe /C "명령" 전달 시 Go의 Windows escape(` -> \")가 cmd 파서와 불일치 → 따옴표 깨짐.
+  // 회피: .bat 파일로 저장 후 실행 (cmd가 파일 읽을 때는 따옴표 정상 해석)
+  const batVirtual = posix.join(LLM_DIR, '_launch.bat');
+  const batHost = hostPath.join(hostLlmDir, '_launch.bat');
+  const batContent = [
+    '@echo off',
+    'cd /d "' + hostLlmDir + '"',
+    '"' + executable + '" -port ' + port + ' -config "' + bootConfig + '"',
+  ].join('\r\n') + '\r\n';
+  fs.writeFileSync(batVirtual, batContent);
+  exitCode = process.exec('@cmd.exe', '/C', batHost);
+} else {
+  const script = `cd "${hostLlmDir}" && exec "${executable}" -port "${port}" -config "${bootConfig}"`;
+  exitCode = process.exec('@/bin/sh', '-c', script);
+}
 process.exit(exitCode);

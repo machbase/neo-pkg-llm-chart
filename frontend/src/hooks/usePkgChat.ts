@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { getCurrentUser } from "../utils/auth";
+import { getWsBase } from "../services/baseUrl";
 import type { Message, PkgProvider, PkgSelectedModel } from "../types/chat";
 
 interface ExtMsgIncoming {
@@ -23,12 +24,13 @@ interface ExtMsgIncoming {
 type ExtWsOutgoing =
     | { type: "get_models"; user_id: string }
     | { type: "chat"; user_id: string; session_id: string; provider: string; model: string; query: string }
-    | { type: "stop"; user_id: string; session_id: string };
+    | { type: "stop"; user_id: string; session_id: string }
+    | { type: "clear"; user_id: string; session_id: string };
 
-const getExtWsUrl = () => {
-    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+const getExtWsUrl = async (): Promise<string> => {
+    const base = await getWsBase();
     const userId = getCurrentUser() ?? "sys";
-    return `${protocol}://${window.location.hostname}:8884/${userId}/ws`;
+    return `${base}/${userId}/ws`;
 };
 
 const generateSessionId = (): string => `sess-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -118,6 +120,12 @@ export const usePkgChat = (pInitialMessages?: Message[]) => {
                 }
                 setProcessingAnswer(false);
                 processingAnswerRef.current = false;
+                // Finalize any messages still marked as processing
+                setMessages((prev) => {
+                    const hasProcessing = prev.some((m) => m.isProcess);
+                    if (!hasProcessing) return prev;
+                    return prev.map((m) => m.isProcess ? { ...m, isProcess: false } : m);
+                });
                 break;
 
             case "stream_msg_start":
@@ -174,7 +182,7 @@ export const usePkgChat = (pInitialMessages?: Message[]) => {
     }, [handleModelsResponse, handleMsgResponse, handleStopResponse, handleErrorResponse]);
 
     // WebSocket connect
-    const connect = useCallback(() => {
+    const connect = useCallback(async () => {
         const prev = socketRef.current;
         if (prev) {
             prev.onopen = null;
@@ -186,7 +194,8 @@ export const usePkgChat = (pInitialMessages?: Message[]) => {
         }
 
         try {
-            const ws = new WebSocket(getExtWsUrl());
+            const url = await getExtWsUrl();
+            const ws = new WebSocket(url);
             socketRef.current = ws;
 
             ws.onopen = () => {
@@ -294,6 +303,14 @@ export const usePkgChat = (pInitialMessages?: Message[]) => {
         sendExt({ type: "stop", user_id: getCurrentUser() ?? "", session_id: sessionIdRef.current });
     };
 
+    const handleClearSession = () => {
+        sendExt({ type: "clear", user_id: getCurrentUser() ?? "", session_id: sessionIdRef.current });
+        sessionIdRef.current = generateSessionId();
+        setMessages([]);
+        setProcessingAnswer(false);
+        processingAnswerRef.current = false;
+    };
+
     const isConnected = wsReady && socketRef.current?.readyState === WebSocket.OPEN;
     const isDisconnected = !isConnected && wasConnectedRef.current;
 
@@ -313,6 +330,7 @@ export const usePkgChat = (pInitialMessages?: Message[]) => {
         reconnect: connect,
         handleSendMessage,
         handleInterruptMessage,
+        handleClearSession,
         getListModels,
     };
 };

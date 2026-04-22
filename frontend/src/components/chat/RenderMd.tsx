@@ -33,7 +33,27 @@ export const RenderMd = ({ content, isInterrupt }: RenderMdProps) => {
 
     const html = useMemo(() => {
         if (isInterrupt || !content) return '';
-        return marked.parse(content) as string;
+        // Fix: marked fails to parse **bold**/*italic*/~~strike~~ with inner spaces or CJK word boundaries
+        const fixed = content.split('\n').map(line => {
+            const codes: string[] = [];
+            line = line.replace(/`[^`]+`/g, (m) => { codes.push(m); return '%%C' + (codes.length - 1) + '%%'; });
+            // Bold
+            line = line.replace(/\*\*\s*([^*]+?)\s*\*\*/g, '**$1**');
+            line = line.replace(/(\*\*\S+?\*\*)(?=[가-힣a-zA-Z0-9])/g, '$1 ');
+            // Bold+Italic (***)
+            line = line.replace(/\*\*\*\s*([^*]+?)\s*\*\*\*/g, '***$1***');
+            line = line.replace(/(\*\*\*\S+?\*\*\*)(?=[가-힣a-zA-Z0-9])/g, '$1 ');
+            // Italic (single *)
+            line = line.replace(/(?<!\*)\*\s+([^*]+?)\s*\*(?!\*)/g, '*$1*');
+            line = line.replace(/(?<!\*)\*([^*]+?)\s+\*(?!\*)/g, '*$1*');
+            line = line.replace(/((?<!\*)\*[^*]+?\*(?!\*))(?=[가-힣a-zA-Z0-9])/g, '$1 ');
+            // Strikethrough
+            line = line.replace(/~~\s*([^~]+?)\s*~~/g, '~~$1~~');
+            line = line.replace(/(~~\S+?~~)(?=[가-힣a-zA-Z0-9])/g, '$1 ');
+            line = line.replace(/%%C(\d+)%%/g, (_, i) => codes[parseInt(i)]);
+            return line;
+        }).join('\n');
+        return marked.parse(fixed) as string;
     }, [content, isInterrupt]);
 
     const COPY_ICON = `<svg viewBox="0 0 24 24" fill="rgba(255,255,255,0.5)" height="100%" width="100%">
@@ -46,7 +66,17 @@ export const RenderMd = ({ content, isInterrupt }: RenderMdProps) => {
 
         container.querySelectorAll('pre code').forEach((codeElement) => {
             const preElement = codeElement.parentElement as HTMLPreElement;
-            if (!preElement || preElement.querySelector('.code-copy-button')) return;
+            if (!preElement) return;
+
+            let wrapper = preElement.parentElement;
+            if (!wrapper || !wrapper.classList.contains('code-block-wrapper')) {
+                wrapper = document.createElement('div');
+                wrapper.className = 'code-block-wrapper';
+                preElement.parentElement?.insertBefore(wrapper, preElement);
+                wrapper.appendChild(preElement);
+            }
+
+            if (wrapper.querySelector(':scope > .code-copy-button')) return;
 
             const copyButton = document.createElement('button');
             copyButton.className = 'code-copy-button';
@@ -89,7 +119,7 @@ export const RenderMd = ({ content, isInterrupt }: RenderMdProps) => {
                 }
             });
 
-            preElement.appendChild(copyButton);
+            wrapper.appendChild(copyButton);
         });
     });
 

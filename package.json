@@ -1,6 +1,10 @@
 {
   "name": "neo-pkg-llm-chat",
   "version": "0.0.1",
-  "scripts": {},
+  "bin": {},
+  "scripts": {
+    "setup": "/work/public/neo-pkg-llm-chat/cgi-bin/bootstrap.js",
+    "uninstall": "/work/public/neo-pkg-llm-chat/cgi-bin/cleanup.js"
+  },
   "dependencies": {}
 }
