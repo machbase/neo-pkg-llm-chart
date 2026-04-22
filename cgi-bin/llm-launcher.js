@@ -48,8 +48,17 @@ console.println('cwd:', hostLlmDir);
 // cwd = hostLlmDir (= cgi-bin/llm) 이어야 configs/sys.json이 올바른 위치에 생성됨.
 var exitCode;
 if (IS_WIN) {
-  const script = `cd /d "${hostLlmDir}" && "${executable}" -port ${port} -config "${bootConfig}"`;
-  exitCode = process.exec('@cmd.exe', '/C', script);
+  // cmd.exe /C "명령" 전달 시 Go의 Windows escape(` -> \")가 cmd 파서와 불일치 → 따옴표 깨짐.
+  // 회피: .bat 파일로 저장 후 실행 (cmd가 파일 읽을 때는 따옴표 정상 해석)
+  const batVirtual = posix.join(LLM_DIR, '_launch.bat');
+  const batHost = hostPath.join(hostLlmDir, '_launch.bat');
+  const batContent = [
+    '@echo off',
+    'cd /d "' + hostLlmDir + '"',
+    '"' + executable + '" -port ' + port + ' -config "' + bootConfig + '"',
+  ].join('\r\n') + '\r\n';
+  fs.writeFileSync(batVirtual, batContent);
+  exitCode = process.exec('@cmd.exe', '/C', batHost);
 } else {
   const script = `cd "${hostLlmDir}" && exec "${executable}" -port "${port}" -config "${bootConfig}"`;
   exitCode = process.exec('@/bin/sh', '-c', script);
