@@ -44,9 +44,12 @@ console.println('port:', port);
 console.println('boot config:', bootConfig);
 console.println('cwd:', hostLlmDir);
 
+// 바이너리 Manager는 configs/ 를 cwd 기준 상대경로로 스캔하므로
+// cwd = hostLlmDir (= cgi-bin/llm) 이어야 configs/sys.json이 올바른 위치에 생성됨.
 var exitCode;
 if (IS_WIN) {
-  exitCode = process.exec('@' + executable, '-port', port, '-config', bootConfig);
+  const script = `cd /d "${hostLlmDir}" && "${executable}" -port ${port} -config "${bootConfig}"`;
+  exitCode = process.exec('@cmd.exe', '/C', script);
 } else {
   const script = `cd "${hostLlmDir}" && exec "${executable}" -port "${port}" -config "${bootConfig}"`;
   exitCode = process.exec('@/bin/sh', '-c', script);
