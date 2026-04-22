@@ -41,7 +41,7 @@ var exitCode;
 if (IS_WIN) {
   exitCode = process.exec('@' + executable, '-config', configFile);
 } else {
-  const script = cd "${hostLlmDir}" && exec "${executable}" -config "${configFile}";
+  const script = `cd "${hostLlmDir}" && exec "${executable}" -config "${configFile}"`;
   exitCode = process.exec('@/bin/sh', '-c', script);
 }
 process.exit(exitCode);
