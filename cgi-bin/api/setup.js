@@ -132,6 +132,16 @@ const url = `https://github.com/${REPO}/releases/latest/download/${assetName}`;
 log('platform:', platform);
 log('downloading:', url);
 
+// 기존 바이너리 프로세스가 살아있으면 .exe 파일 락으로 extract 실패함 → 선제적 kill.
+// Windows에서 좀비 프로세스 누적 방지.
+const binName = IS_WIN ? 'neo-pkg-llm.exe' : 'neo-pkg-llm';
+if (IS_WIN) {
+  process.exec('@taskkill', '/F', '/IM', binName);
+} else {
+  process.exec('@pkill', '-f', binName);
+}
+log('killed existing processes (if any):', binName);
+
 const tmpFile = path.join(ROOT, '.llm-download' + ext);
 download(url, tmpFile, (err) => {
   if (err) {
