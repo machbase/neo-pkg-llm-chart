@@ -1,47 +1,54 @@
 'use strict';
 
-// JSH 런타임에서 실행됨. JSH 가상경로(/work/...)를 호스트 OS의 실경로로 변환한 뒤
-// 네이티브 바이너리를 shell 래퍼로 실행. Linux / macOS / Windows 공통 지원.
+// JSH 런타임에서 실행됨. cgi-bin/config.json의 port를 읽어 -port 로 전달하고,
+// -config는 configs/ 밖 경로(_boot.json)로 지정하여 Manager가 sys.json을
+// 자동 생성하지 않도록 한다. Linux / macOS / Windows 공통 지원.
 
 const process = require('process');
 const pathLib = require('path');
 const os = require('os');
+const fs = require('fs');
 
 const IS_WIN = os.platform() === 'windows';
-
-// JSH의 path 모듈은 기본 POSIX. Windows 호스트 경로는 win32를 명시적으로 사용.
-// posix  - JSH 가상경로 조작 (항상 forward slash, /work/... 형태)
-// hostPath - 호스트 경로 조작 (Windows: backslash/drive letter 처리)
 const posix = pathLib;
 const hostPath = IS_WIN ? pathLib.win32 : pathLib;
 
-// ── JSH 가상경로 계산 (POSIX 고정) ──
-const SCRIPT_DIR = posix.resolve(posix.dirname(process.argv[1])); // /work/public/.../cgi-bin
-const LLM_DIR = posix.join(SCRIPT_DIR, 'llm');                    // /work/public/.../cgi-bin/llm
+// ── JSH 가상경로 (POSIX 고정) ──
+const SCRIPT_DIR = posix.resolve(posix.dirname(process.argv[1])); // /work/.../cgi-bin
+const LLM_DIR = posix.join(SCRIPT_DIR, 'llm');                    // /work/.../cgi-bin/llm
+const CONFIG_JSON = posix.join(SCRIPT_DIR, 'config.json');        // cgi-bin/config.json
 const BIN_NAME = IS_WIN ? 'neo-pkg-llm.exe' : 'neo-pkg-llm';
 
-// ── 호스트 실경로 변환 ──
-// process.execPath = 실행 중인 machbase-neo 바이너리의 호스트 절대경로
-// 그 디렉토리가 JSH의 /work/ 마운트 포인트로 가정 (server.go:1059-1064)
+// ── port 읽기 (없으면 기본 8884) ──
+let port = '8884';
+try {
+  if (fs.existsSync(CONFIG_JSON)) {
+    const cfg = JSON.parse(fs.readFileSync(CONFIG_JSON, { encoding: 'utf8' }));
+    if (cfg && cfg.server && cfg.server.port) port = String(cfg.server.port);
+  }
+} catch (e) {
+  // 기본값 사용
+}
+
+// ── 호스트 경로 변환 ──
 const hostWorkDir = hostPath.dirname(process.execPath);
-const relFromWork = LLM_DIR.replace(/^\/work\//, ''); // 가상경로는 POSIX 고정
+const relFromWork = LLM_DIR.replace(/^\/work\//, '');
 const hostLlmDir = hostPath.join(hostWorkDir, relFromWork);
 const executable = hostPath.join(hostLlmDir, BIN_NAME);
-const configFile = hostPath.join(hostLlmDir, 'configs', 'sys.json');
+// throwaway bootstrap — configs/ 밖이라 Manager.LoadAll 스캔 대상 아님
+// → 사용자가 설정 저장하기 전까지 sys.json 자동 생성 안 됨 → 프론트는 settings 탭으로 분기
+const bootConfig = hostPath.join(hostLlmDir, '_boot.json');
 
 console.println('launching:', executable);
-console.println('config:', configFile);
+console.println('port:', port);
+console.println('boot config:', bootConfig);
 console.println('cwd:', hostLlmDir);
 
-// 바이너리 직접 실행. config는 절대경로로 전달하므로 cwd 무관.
-// JSH '@' prefix = 네이티브 바이너리 직접 실행.
-// Windows: cmd.exe 경유 시 경로 파싱 문제 → exe 직접 실행
-// Linux/macOS: shell 래퍼로 cwd 설정 (상대경로 참조 대비)
 var exitCode;
 if (IS_WIN) {
-  exitCode = process.exec('@' + executable, '-config', configFile);
+  exitCode = process.exec('@' + executable, '-port', port, '-config', bootConfig);
 } else {
-  const script = `cd "${hostLlmDir}" && exec "${executable}" -config "${configFile}"`;
+  const script = `cd "${hostLlmDir}" && exec "${executable}" -port "${port}" -config "${bootConfig}"`;
   exitCode = process.exec('@/bin/sh', '-c', script);
 }
 process.exit(exitCode);
