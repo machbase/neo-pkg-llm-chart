@@ -59,7 +59,7 @@ export default function App() {
                     machbase: {
                         ...prev.machbase,
                         host: "127.0.0.1",
-                        port: "5656",
+                        port: "5654",
                         user: currentUser,
                     },
                 }));
@@ -173,10 +173,7 @@ export default function App() {
                 )}
                 {activeTab !== null && (
                     <>
-                        <div
-                            className="flex-1 flex flex-col overflow-hidden"
-                            style={{ display: activeTab === "settings" ? undefined : "none" }}
-                        >
+                        <div className="flex-1 flex flex-col overflow-hidden" style={{ display: activeTab === "settings" ? undefined : "none" }}>
                             <div className="page-header">
                                 <div className="page-header-inner">
                                     <div>
@@ -206,15 +203,19 @@ export default function App() {
                                             onKeyChange={handleApiKeyChange}
                                             onOllamaUrlChange={handleOllamaUrlChange}
                                         />
-                                        <ModelsSection claude={config.claude} chatgpt={config.chatgpt} gemini={config.gemini} ollama={config.ollama} onChange={handleModelsChange} errors={validationErrors} />
+                                        <ModelsSection
+                                            claude={config.claude}
+                                            chatgpt={config.chatgpt}
+                                            gemini={config.gemini}
+                                            ollama={config.ollama}
+                                            onChange={handleModelsChange}
+                                            errors={validationErrors}
+                                        />
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div
-                            className="flex-1 overflow-hidden"
-                            style={{ display: activeTab === "chat" ? undefined : "none" }}
-                        >
+                        <div className="flex-1 overflow-hidden" style={{ display: activeTab === "chat" ? undefined : "none" }}>
                             <Chat key={chatResetKey} onOpenSettings={handleOpenSettings} />
                         </div>
                     </>
