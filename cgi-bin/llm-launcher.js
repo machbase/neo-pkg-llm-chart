@@ -9,7 +9,7 @@ const os = require('os');
 
 const IS_WIN = os.platform() === 'windows';
 
-// JSH의 `path` 모듈은 기본 POSIX. Windows 호스트 경로는 win32를 명시적으로 사용.
+// JSH의 path 모듈은 기본 POSIX. Windows 호스트 경로는 win32를 명시적으로 사용.
 // posix  - JSH 가상경로 조작 (항상 forward slash, /work/... 형태)
 // hostPath - 호스트 경로 조작 (Windows: backslash/drive letter 처리)
 const posix = pathLib;
@@ -33,14 +33,15 @@ console.println('launching:', executable);
 console.println('config:', configFile);
 console.println('cwd:', hostLlmDir);
 
-// process.chdir은 JSH 가상 PWD만 바꾸고 네이티브 바이너리 cwd엔 효과 없음.
-// process.exec도 Dir 옵션 미지원 → shell 래퍼로 cd 후 exec.
-// (바이너리는 cwd 기준 "configs/" 를 스캔하므로 cwd가 LLM_DIR이어야 함)
-const shell = IS_WIN ? '@cmd.exe' : '@/bin/sh';
-const flag = IS_WIN ? '/C' : '-c';
-const script = IS_WIN
-  ? `cd /d "${hostLlmDir}" && "${executable}" -config "${configFile}"`
-  : `cd "${hostLlmDir}" && exec "${executable}" -config "${configFile}"`;
-
-const exitCode = process.exec(shell, flag, script);
+// 바이너리 직접 실행. config는 절대경로로 전달하므로 cwd 무관.
+// JSH '@' prefix = 네이티브 바이너리 직접 실행.
+// Windows: cmd.exe 경유 시 경로 파싱 문제 → exe 직접 실행
+// Linux/macOS: shell 래퍼로 cwd 설정 (상대경로 참조 대비)
+var exitCode;
+if (IS_WIN) {
+  exitCode = process.exec('@' + executable, '-config', configFile);
+} else {
+  const script = cd "${hostLlmDir}" && exec "${executable}" -config "${configFile}";
+  exitCode = process.exec('@/bin/sh', '-c', script);
+}
 process.exit(exitCode);
