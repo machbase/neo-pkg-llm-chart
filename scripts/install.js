@@ -49,7 +49,9 @@ function download(url, dest, cb) {
   var MAX = 10;
   var headers = { 'User-Agent': 'neo-pkg-llm-chat' };
   function fetch(u, remaining) {
+    console.println('  fetching:', u);
     http.get(u, { headers: headers }, function(res) {
+      console.println('  response status:', res.statusCode);
       if (res.statusCode >= 300 && res.statusCode < 400) {
         var loc = res.headers && res.headers.location;
         if (!loc) { cb(new Error('redirect ' + res.statusCode + ' no location')); return; }
@@ -60,6 +62,7 @@ function download(url, dest, cb) {
       if (!res.ok) { cb(new Error('HTTP ' + res.statusCode)); return; }
       var buf = res.readBodyBuffer();
       if (!buf || buf.byteLength === 0) { cb(new Error('empty download')); return; }
+      console.println('  writing to:', dest, '(' + buf.byteLength + ' bytes)');
       fs.writeFileSync(dest, buf);
       cb(null);
     });
