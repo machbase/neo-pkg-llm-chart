@@ -19,11 +19,12 @@ service.stop(SERVICE_NAME, function(err) {
   }
 
   // 안전장치: orphan/좀비 프로세스 정리
+  // pkill -x: name 정확히 일치 (부분일치로 다른 프로세스 오인 방지)
   try {
     if (IS_WIN) {
       process.exec('@taskkill', '/F', '/IM', BIN_NAME);
     } else {
-      process.exec('@pkill', '-f', BIN_NAME);
+      process.exec('@pkill', '-x', BIN_NAME);
     }
   } catch (e) {
     // 무시

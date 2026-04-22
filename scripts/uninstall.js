@@ -21,11 +21,12 @@ service.stop(SERVICE_NAME, function(stopErr) {
   }
 
   // Windows에서는 launcher 자식 프로세스가 orphan으로 남을 수 있음 → 강제 종료
+  // pkill -x: 프로세스 name 정확히 일치 (부분일치로 자기 자신 죽이는 문제 회피)
   try {
     if (IS_WIN) {
       process.exec('@taskkill', '/F', '/IM', BIN_NAME);
     } else {
-      process.exec('@pkill', '-f', BIN_NAME);
+      process.exec('@pkill', '-x', BIN_NAME);
     }
   } catch (e) {
     // 무시 — 죽일 프로세스 없거나 명령 실패

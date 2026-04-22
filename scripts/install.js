@@ -38,7 +38,8 @@ function preemptiveKill() {
     if (IS_WIN) {
       process.exec('@taskkill', '/F', '/IM', BIN_NAME);
     } else {
-      process.exec('@pkill', '-f', BIN_NAME);
+      // -x: 프로세스 name 정확히 일치만. (-f는 cmdline 부분일치라 install.js 자기 자신까지 kill됨)
+      process.exec('@pkill', '-x', BIN_NAME);
     }
   } catch (e) {
     // 죽일 프로세스 없거나 명령 없음 — 무시
