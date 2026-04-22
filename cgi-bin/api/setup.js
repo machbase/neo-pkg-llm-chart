@@ -152,6 +152,17 @@ download(url, tmpFile, (err) => {
     return;
   }
 
+  // 추출 직후 바이너리 존재 검증 (install/start 체인으로 진행하기 전 fail-fast)
+  const binName = IS_WIN ? 'neo-pkg-llm.exe' : 'neo-pkg-llm';
+  const binPath = path.join(LLM_DIR, binName);
+  if (!fs.existsSync(binPath)) {
+    log('ERROR: binary missing after extract:', binPath);
+    reply({ ok: false, reason: 'binary missing after extract: ' + binPath, log: logs });
+    process.exit(1);
+    return;
+  }
+  log('verified binary:', binPath);
+
   log('done. llm installed at', LLM_DIR);
-  reply({ ok: true, data: { path: LLM_DIR, log: logs } });
+  reply({ ok: true, data: { path: LLM_DIR, binary: binPath, log: logs } });
 });
