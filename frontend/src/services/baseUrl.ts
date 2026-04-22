@@ -15,11 +15,14 @@ const pkgBasePath = (): string => {
     return trimmed === "" ? "/" : trimmed;
 };
 
-const URL_PREFIX = "/public/neo-pkg-llm-chat/cgi-bin/api";
+// CGI 엔드포인트 (machbase-neo, 현재 페이지 포트) — info.js 전용
+const CGI_PREFIX = "/public/neo-pkg-llm-chat/cgi-bin/api";
+// LLM 바이너리 REST API — http://host:{llmPort}/api/...
+const API_PREFIX = "/api";
 
 export const getLlmPort = (): Promise<string> => {
     if (cachedPort) return cachedPort;
-    const url = `${URL_PREFIX}/info`;
+    const url = `${CGI_PREFIX}/info`;
     cachedPort = fetch(url)
         .then((res) => {
             if (!res.ok) throw new Error(`info.js HTTP ${res.status}`);
@@ -39,7 +42,8 @@ export const getLlmPort = (): Promise<string> => {
 };
 
 export const getApiBase = async (): Promise<string> => {
-    return `${window.location.protocol}//${window.location.hostname}:${window.location.port}${URL_PREFIX}`;
+    const port = await getLlmPort();
+    return `${window.location.protocol}//${window.location.hostname}:${port}${API_PREFIX}`;
 };
 
 export const getWsBase = async (): Promise<string> => {
