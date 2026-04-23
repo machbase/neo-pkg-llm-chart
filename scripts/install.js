@@ -33,16 +33,36 @@ function detectPlatform() {
   return osPart + '-' + archPart;
 }
 
+// /proc/process/ 에서 실행 중인 neo-pkg-llm 찾아 정확한 PID로 트리 kill.
+// 이름 매칭 방식보다 안전 (자기 자신 / 유사 이름 오인 사살 없음).
 function preemptiveKill() {
-  try {
-    if (IS_WIN) {
-      process.exec('@taskkill', '/F', '/IM', BIN_NAME);
-    } else {
-      // -x: 프로세스 name 정확히 일치만. (-f는 cmdline 부분일치라 install.js 자기 자신까지 kill됨)
-      process.exec('@pkill', '-x', BIN_NAME);
-    }
-  } catch (e) {
-    // 죽일 프로세스 없거나 명령 없음 — 무시
+  var procRoot = '/proc/process';
+  if (!fs.existsSync(procRoot)) return;
+
+  var found = null;
+  var entries = fs.readdirSync(procRoot);
+  for (var i = 0; i < entries.length; i++) {
+    var metaPath = path.join(procRoot, entries[i], 'meta.json');
+    if (!fs.existsSync(metaPath)) continue;
+    try {
+      var meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+      var exe = meta.exec_path || meta.command || '';
+      if (/[\/\\]neo-pkg-llm(\.exe)?$/.test(exe)) {
+        found = { pid: meta.pid, pgid: meta.pgid > 0 ? meta.pgid : meta.pid };
+        break;
+      }
+    } catch (e) {}
+  }
+
+  if (!found) return;
+  console.println('preemptive kill: pid=' + found.pid + ' pgid=' + found.pgid);
+
+  if (IS_WIN) {
+    try { process.exec('@taskkill', '/T', '/PID', String(found.pid)); } catch (e) {}
+    try { process.exec('@taskkill', '/F', '/T', '/PID', String(found.pid)); } catch (e) {}
+  } else {
+    try { process.exec('@kill', '-TERM', '-' + found.pgid); } catch (e) {}
+    try { process.exec('@kill', '-KILL', '-' + found.pgid); } catch (e) {}
   }
 }
 
