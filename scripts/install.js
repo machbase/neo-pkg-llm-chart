@@ -34,8 +34,18 @@ function detectPlatform() {
 }
 
 // /proc/process/ 에서 실행 중인 neo-pkg-llm 찾아 정확한 PID로 트리 kill.
-// 이름 매칭 방식보다 안전 (자기 자신 / 유사 이름 오인 사살 없음).
+// JSH 재시작으로 tracker 초기화된 orphan 좀비는 OS 레벨 pkill로 fallback.
 function preemptiveKill() {
+  // 1. OS 레벨 fallback — /proc/process 추적 범위 밖 좀비 대응
+  try {
+    if (IS_WIN) {
+      process.exec('@taskkill', '/F', '/IM', BIN_NAME);
+    } else {
+      process.exec('@pkill', '-9', '-x', BIN_NAME);
+    }
+  } catch (e) {}
+
+  // 2. /proc/process 기반 정확한 트리 kill (JSH-tracked 프로세스)
   var procRoot = '/proc/process';
   if (!fs.existsSync(procRoot)) return;
 
