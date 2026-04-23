@@ -39,6 +39,7 @@ function preemptiveKill() {
   var procRoot = '/proc/process';
   if (!fs.existsSync(procRoot)) return;
 
+  var re = /[\/\\]neo-pkg-llm(\.exe)?(\s|$|"|')/;
   var found = null;
   var entries = fs.readdirSync(procRoot);
   for (var i = 0; i < entries.length; i++) {
@@ -47,7 +48,12 @@ function preemptiveKill() {
     try {
       var meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
       var exe = meta.exec_path || meta.command || '';
-      if (/[\/\\]neo-pkg-llm(\.exe)?$/.test(exe)) {
+      var args = meta.args || [];
+      var match = re.test(exe);
+      for (var j = 0; !match && j < args.length; j++) {
+        match = re.test(String(args[j]));
+      }
+      if (match) {
         found = { pid: meta.pid, pgid: meta.pgid > 0 ? meta.pgid : meta.pid };
         break;
       }

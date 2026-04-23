@@ -36,6 +36,19 @@ service.stop(SERVICE_NAME, function(stopErr) {
 
 // /proc/process/ 에서 neo-pkg-llm 엔트리 찾아 PGID(unix) 또는 PID(windows)로 트리 kill.
 // 정확한 PID 사용 → 이름 일치 방식보다 안전 (다른 프로세스 오인 사살 없음)
+// exec_path 직접 매칭 외에, shell wrapper(bin/sh -c "... exec binary ...") 경우
+// args 안에 binary 경로가 포함되므로 함께 검사.
+function matchesLlm(meta) {
+  var re = /[\/\\]neo-pkg-llm(\.exe)?(\s|$|"|')/;
+  var exe = meta.exec_path || meta.command || '';
+  if (re.test(exe)) return true;
+  var args = meta.args || [];
+  for (var i = 0; i < args.length; i++) {
+    if (re.test(String(args[i]))) return true;
+  }
+  return false;
+}
+
 function killLlmTree() {
   var fs = require('fs');
   var path = require('path');
@@ -55,8 +68,7 @@ function killLlmTree() {
     if (!fs.existsSync(metaPath)) continue;
     try {
       var meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
-      var exe = meta.exec_path || meta.command || '';
-      if (/[\/\\]neo-pkg-llm(\.exe)?$/.test(exe)) {
+      if (matchesLlm(meta)) {
         found = { pid: meta.pid, pgid: meta.pgid > 0 ? meta.pgid : meta.pid };
         break;
       }
