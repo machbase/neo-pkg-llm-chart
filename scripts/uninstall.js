@@ -7,10 +7,13 @@
 
 var process = require('process');
 var service = require('service');
+var os = require('os');
 
 var SERVICE_NAME = 'neo-pkg-llm';
+var IS_WIN = os.platform() === 'windows';
+var BIN_NAME = IS_WIN ? 'neo-pkg-llm.exe' : 'neo-pkg-llm';
 
-// 1. 프로세스 트리 kill (정확한 PID 기반)
+// 1. 프로세스 트리 kill (OS 레벨 + /proc/process 이중 안전장치)
 killLlmTree();
 
 // 2. service.stop
@@ -50,14 +53,22 @@ function matchesLlm(meta) {
 }
 
 function killLlmTree() {
+  // 1. OS 레벨 fallback — /proc/process 엔트리가 사라진 orphan 대응
+  //    (launcher 종료 시 procEntry.finish()로 트래킹 제거되지만 binary는 살아남음)
+  try {
+    if (IS_WIN) {
+      process.exec('@taskkill', '/F', '/IM', BIN_NAME);
+    } else {
+      process.exec('@pkill', '-9', '-x', BIN_NAME);
+    }
+  } catch (e) {}
+
+  // 2. /proc/process 기반 정확한 트리 kill (여전히 tracked 상태인 경우)
   var fs = require('fs');
   var path = require('path');
-  var os = require('os');
-  var IS_WIN = os.platform() === 'windows';
 
   var procRoot = '/proc/process';
   if (!fs.existsSync(procRoot)) {
-    console.println('killLlmTree: /proc/process not available, skip');
     return;
   }
 
