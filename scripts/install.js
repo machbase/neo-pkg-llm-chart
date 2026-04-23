@@ -1,7 +1,7 @@
 'use strict';
 
 // pkg run install 호출 시:
-//   바이너리 다운로드/추출 → 서비스 등록 (enable=true) → 시작.
+//   바이너리 다운로드/추출 → 서비스 등록 (enable=false) → 시작.
 
 var path = require('path');
 var process = require('process');
@@ -141,7 +141,7 @@ function installService(cb) {
   console.println('installing service:', SERVICE_NAME);
   service.install({
     name: SERVICE_NAME,
-    enable: true,
+    enable: false,
     working_dir: LLM_DIR,
     executable: LAUNCHER,
   }, cb);
