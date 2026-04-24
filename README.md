@@ -18,7 +18,13 @@ Without writing SQL, you can explore tables, view tag lists, analyze data, and g
 
 - **Multiple LLM Providers** — Choose and switch freely between Claude, ChatGPT, Gemini, and Ollama (local)
 - **Direct Machbase Integration** — The LLM directly queries and analyzes tables, tags, and time-series data
-- **Real-time Streaming Responses** — Token-level streaming for immediate feedback
-- **Quick Prompt Execution** — Run frequently used queries with a single click
-- **Automatic Dashboards & Reports** — Visualize results and generate reports automatically
+- **Dashboards & Reports via Chat** — Generate analysis dashboards and reports through conversation
 - **Web-based Configuration** — Easily set up API keys, models, and database connections in the browser
+
+## Example Prompts
+
+- "Show me the table list"
+- "What is Rollup?"
+- "Create an analysis dashboard for the Example table"
+- "Write a financial analysis report for the Example table"
+- "Write a vibration analysis report for the Example table"
