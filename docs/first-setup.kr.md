@@ -21,9 +21,7 @@ weight: 20
 
 이 정보는 LLM이 질의 실행이나 대시보드 생성에 사용할 Machbase 연결입니다.
 
-> 스크린샷 위치: `llm-settings-connection.png`
->
-> 권장 장면: Machbase Connection 카드에서 Host, Port, User ID, Password 입력창이 보이는 화면
+![Machbase Connection 설정 화면](./images/llm-settings-connection.png)
 
 ## API Keys & Endpoints
 
@@ -44,6 +42,17 @@ weight: 20
 모든 Provider를 다 채울 필요는 없습니다.  
 실제로 사용할 Provider만 입력하면 됩니다.
 
+프로바이더별 모델 목록 확인 위치:
+
+- Claude
+  - Anthropic Models 문서에서 `Claude API ID`를 확인합니다.
+- ChatGPT
+  - OpenAI Models 문서에서 `Model ID`를 확인합니다.
+- Gemini
+  - Gemini Models 문서에서 모델 코드를 확인합니다.
+- Ollama
+  - 로컬에 `ollama pull`로 내려받은 모델 이름을 그대로 사용합니다.
+
 ## Models 등록
 
 LLM Chat은 Provider별로 사용할 Model을 별도로 등록합니다.
@@ -62,9 +71,7 @@ LLM Chat은 Provider별로 사용할 Model을 별도로 등록합니다.
 - Model ID는 Provider 문서에 나오는 정확한 값을 사용합니다.
 - Ollama는 로컬에 `pull`한 모델 이름을 그대로 쓰면 됩니다.
 
-> 스크린샷 위치: `llm-settings-models.png`
->
-> 권장 장면: Models 테이블에서 Provider, Display Name, Model ID가 보이는 화면
+![Models 설정 화면](./images/llm-settings-models.png)
 
 ## 저장 전 확인 사항
 

@@ -1,6 +1,6 @@
 ---
 title: 문제 해결
-weight: 40
+weight: 60
 ---
 
 # 문제 해결
@@ -51,5 +51,5 @@ weight: 40
 
 ## 문서 이동
 
-- [이전: Chat 사용 방법](./chat-usage.kr.md)
+- [이전: HTTP API와 WebSocket](./http-api-and-websocket.kr.md)
 - [목차로 돌아가기](./index.kr.md)
