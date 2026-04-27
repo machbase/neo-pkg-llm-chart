@@ -9,7 +9,7 @@ neo-pkg-llm-chat is an LLM-based chat interface that allows you to query and ana
 Ask questions in your web browser, and the LLM agent will directly query and analyze data stored in Machbase Neo.  
 Without writing SQL, you can explore tables, view tag lists, analyze data, and generate dashboards and reports—all through a single conversation.
 
-Manual: [User Manual](https://github.com/machbase/neo-pkg-llm-chat/blob/edit-docs/docs/index.en.md)
+Manual: [User Manual](https://github.com/machbase/neo-pkg-llm-chat/blob/main/docs/index.en.md)
 
 ## Who is it for?
 
