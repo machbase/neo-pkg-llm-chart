@@ -6,3 +6,4 @@ cgi-bin/.llm-download.zip
 cgi-bin/api/.llm-download.tar.gz
 cgi-bin/api/.llm-download.zip
 .DS_Store
+ARCHITECTURE.md
